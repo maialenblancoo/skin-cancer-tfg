@@ -16,7 +16,7 @@ import streamlit as st
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import cv2
+
 
 # ── Hugging Face model download ───────────────────────────────────────────────
 from huggingface_hub import hf_hub_download
@@ -94,7 +94,6 @@ def color_constancy(img_array: np.ndarray, power: float = 6.0) -> np.ndarray:
     scale = norm.mean() / (norm + 1e-6)
     img = np.clip(img * scale, 0, 255).astype(np.uint8)
     return img
-
 
 def build_metadata_vector(age: float, location: str) -> torch.Tensor:
     """Build the 16-dim metadata vector (age normalised + location one-hot)."""
@@ -218,13 +217,12 @@ class GradCAM:
 
 def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
                     alpha: float = 0.45) -> np.ndarray:
-    """Overlay Grad-CAM heatmap on RGB image."""
-    heatmap_clipped = np.clip(heatmap, 0.0, 1.0).astype(np.float32)
-    heatmap_uint8   = np.uint8(255 * heatmap_clipped)
-    colormap        = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
-    colormap_rgb    = cv2.cvtColor(colormap, cv2.COLOR_BGR2RGB)
-    img_resized     = cv2.resize(img_rgb, (224, 224))
-    overlay         = (alpha * colormap_rgb + (1 - alpha) * img_resized).astype(np.uint8)
+    """Overlay Grad-CAM heatmap on RGB image using matplotlib colormap."""
+    heatmap_clipped = np.clip(heatmap, 0.0, 1.0)
+    colormap = plt.get_cmap("jet")
+    heatmap_colored = (colormap(heatmap_clipped)[:, :, :3] * 255).astype(np.uint8)
+    img_resized = np.array(Image.fromarray(img_rgb).resize((224, 224)))
+    overlay = (alpha * heatmap_colored + (1 - alpha) * img_resized).astype(np.uint8)
     return overlay
 
 
