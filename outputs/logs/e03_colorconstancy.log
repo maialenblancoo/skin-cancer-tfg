@@ -1,0 +1,71 @@
+nohup: no se tendrá en cuenta la entrada
+
+Experimento  : prep_colorconstancy__meta_none
+Preprocesado : colorconstancy
+Metadatos    : ninguno
+Device       : cuda
+
+============================================================
+Experimento: prep_colorconstancy__meta_none
+Device: cuda
+Train: 7009 | Val: 1503
+============================================================
+
+/home/maialen/pfg-venv/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:60: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+Epoch 01/30 | Train Loss: 1.6576 Acc: 0.4661 | Val Loss: 1.1615 Acc: 0.6307
+  ✓ Mejor modelo guardado (val_loss: 1.1615)
+Epoch 02/30 | Train Loss: 1.0182 Acc: 0.6650 | Val Loss: 0.7849 Acc: 0.6853
+  ✓ Mejor modelo guardado (val_loss: 0.7849)
+Epoch 03/30 | Train Loss: 0.7536 Acc: 0.7075 | Val Loss: 0.6991 Acc: 0.6826
+  ✓ Mejor modelo guardado (val_loss: 0.6991)
+Epoch 04/30 | Train Loss: 0.6257 Acc: 0.7366 | Val Loss: 0.7058 Acc: 0.7146
+Epoch 05/30 | Train Loss: 0.5378 Acc: 0.7603 | Val Loss: 0.7258 Acc: 0.7265
+Epoch 06/30 | Train Loss: 0.4696 Acc: 0.7851 | Val Loss: 0.6364 Acc: 0.7798
+  ✓ Mejor modelo guardado (val_loss: 0.6364)
+Epoch 07/30 | Train Loss: 0.3771 Acc: 0.8140 | Val Loss: 0.7167 Acc: 0.8077
+Epoch 08/30 | Train Loss: 0.3759 Acc: 0.8030 | Val Loss: 0.6597 Acc: 0.8077
+Epoch 09/30 | Train Loss: 0.3294 Acc: 0.8267 | Val Loss: 0.7227 Acc: 0.8011
+Epoch 10/30 | Train Loss: 0.2986 Acc: 0.8344 | Val Loss: 0.7401 Acc: 0.8230
+Epoch 11/30 | Train Loss: 0.2402 Acc: 0.8582 | Val Loss: 0.6106 Acc: 0.8204
+  ✓ Mejor modelo guardado (val_loss: 0.6106)
+Epoch 12/30 | Train Loss: 0.2168 Acc: 0.8779 | Val Loss: 0.7055 Acc: 0.8417
+Epoch 13/30 | Train Loss: 0.1899 Acc: 0.8806 | Val Loss: 0.6414 Acc: 0.8370
+Epoch 14/30 | Train Loss: 0.1691 Acc: 0.8910 | Val Loss: 0.7246 Acc: 0.8496
+Epoch 15/30 | Train Loss: 0.1594 Acc: 0.8958 | Val Loss: 0.7332 Acc: 0.8363
+Epoch 16/30 | Train Loss: 0.1433 Acc: 0.9058 | Val Loss: 0.6808 Acc: 0.8510
+Epoch 17/30 | Train Loss: 0.1262 Acc: 0.9177 | Val Loss: 0.7989 Acc: 0.8483
+Epoch 18/30 | Train Loss: 0.1149 Acc: 0.9178 | Val Loss: 0.7468 Acc: 0.8536
+
+Early stopping en epoch 18
+
+Entrenamiento completado. Mejor val_loss: 0.6106
+Modelo guardado en: /home/maialen/PFG/outputs/models/prep_colorconstancy__meta_none_best.pth
+
+============================================================
+Resultados: prep_colorconstancy__meta_none
+============================================================
+  Macro F1      : 0.7700
+  Macro Recall  : 0.8295
+  ROC-AUC       : 0.9692
+  Melanoma Recall: 0.6647
+
+              precision    recall  f1-score   support
+
+       akiec       0.75      0.86      0.80        49
+         bcc       0.85      0.86      0.85        77
+         bkl       0.60      0.79      0.68       165
+          df       0.61      0.82      0.70        17
+         mel       0.57      0.66      0.61       167
+          nv       0.95      0.86      0.90      1006
+        vasc       0.75      0.95      0.84        22
+
+    accuracy                           0.83      1503
+   macro avg       0.73      0.83      0.77      1503
+weighted avg       0.85      0.83      0.84      1503
+
+Matriz de confusión guardada en: /home/maialen/PFG/outputs/figures/prep_colorconstancy__meta_none_confusion_matrix.png
+Resultados guardados en: /home/maialen/PFG/outputs/results.csv
+
+Experimento finalizado: prep_colorconstancy__meta_none
+Métricas finales: {'experiment': 'prep_colorconstancy__meta_none', 'preprocess': 'colorconstancy', 'metadata': 'none', 'macro_f1': 0.77, 'macro_recall': 0.8295, 'roc_auc': 0.9692, 'melanoma_recall': 0.6647}

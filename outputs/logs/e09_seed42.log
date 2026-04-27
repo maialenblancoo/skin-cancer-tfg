@@ -1,0 +1,92 @@
+
+Experimento  : prep_colorconstancy__meta_age+localization__seed_42
+Preprocesado : colorconstancy
+Metadatos    : ['age', 'localization']
+Seed         : 42
+Results CSV  : outputs/results_seed.csv
+Device       : cuda
+
+============================================================
+Experimento: prep_colorconstancy__meta_age+localization__seed_42
+Device: cuda  |  Mixed precision: True  |  Seed: 42
+Train: 7009 | Val: 1503
+============================================================
+
+/home/maialen/pfg-venv/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:60: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+Epoch 01/30 | Train Loss: 1.6632 Acc: 0.3968 | Val Loss: 1.2507 Acc: 0.5988
+  ✓ Mejor modelo guardado (val_loss: 1.2507)
+Epoch 02/30 | Train Loss: 1.0197 Acc: 0.6606 | Val Loss: 0.7522 Acc: 0.7112
+  ✓ Mejor modelo guardado (val_loss: 0.7522)
+Epoch 03/30 | Train Loss: 0.7601 Acc: 0.7109 | Val Loss: 0.7268 Acc: 0.7119
+  ✓ Mejor modelo guardado (val_loss: 0.7268)
+Epoch 04/30 | Train Loss: 0.6112 Acc: 0.7438 | Val Loss: 0.7170 Acc: 0.7305
+  ✓ Mejor modelo guardado (val_loss: 0.7170)
+Epoch 05/30 | Train Loss: 0.5613 Acc: 0.7622 | Val Loss: 0.6740 Acc: 0.7685
+  ✓ Mejor modelo guardado (val_loss: 0.6740)
+Epoch 06/30 | Train Loss: 0.4718 Acc: 0.7783 | Val Loss: 0.7403 Acc: 0.7572
+Epoch 07/30 | Train Loss: 0.4048 Acc: 0.8045 | Val Loss: 0.7723 Acc: 0.7658
+Epoch 08/30 | Train Loss: 0.3748 Acc: 0.8071 | Val Loss: 0.6460 Acc: 0.8097
+  ✓ Mejor modelo guardado (val_loss: 0.6460)
+Epoch 09/30 | Train Loss: 0.3194 Acc: 0.8326 | Val Loss: 0.7052 Acc: 0.7931
+Epoch 10/30 | Train Loss: 0.2959 Acc: 0.8438 | Val Loss: 0.6764 Acc: 0.8064
+Epoch 11/30 | Train Loss: 0.2625 Acc: 0.8486 | Val Loss: 0.6575 Acc: 0.8117
+Epoch 12/30 | Train Loss: 0.2550 Acc: 0.8553 | Val Loss: 0.6144 Acc: 0.8011
+  ✓ Mejor modelo guardado (val_loss: 0.6144)
+Epoch 13/30 | Train Loss: 0.2045 Acc: 0.8729 | Val Loss: 0.5908 Acc: 0.8011
+  ✓ Mejor modelo guardado (val_loss: 0.5908)
+Epoch 14/30 | Train Loss: 0.1903 Acc: 0.8822 | Val Loss: 0.6957 Acc: 0.8230
+Epoch 15/30 | Train Loss: 0.1902 Acc: 0.8886 | Val Loss: 0.6919 Acc: 0.7884
+Epoch 16/30 | Train Loss: 0.1964 Acc: 0.8894 | Val Loss: 0.6656 Acc: 0.8150
+Epoch 17/30 | Train Loss: 0.1719 Acc: 0.8960 | Val Loss: 0.7227 Acc: 0.8263
+Epoch 18/30 | Train Loss: 0.1094 Acc: 0.9184 | Val Loss: 0.7437 Acc: 0.8403
+Epoch 19/30 | Train Loss: 0.1059 Acc: 0.9272 | Val Loss: 0.7116 Acc: 0.8516
+Epoch 20/30 | Train Loss: 0.1038 Acc: 0.9372 | Val Loss: 0.7784 Acc: 0.8363
+
+Early stopping en epoch 20
+
+Entrenamiento completado. Mejor val_loss: 0.5908
+Modelo guardado en: /home/maialen/PFG/outputs/models/prep_colorconstancy__meta_age+localization__seed_42_best.pth
+
+============================================================
+Resultados: prep_colorconstancy__meta_age+localization__seed_42
+============================================================
+  Macro F1        : 0.7610
+  Macro Recall    : 0.8217
+  Macro Precision : 0.7309
+  ROC-AUC         : 0.9707
+  mAP             : 0.8526
+  Brier Score     : 0.0426  (0=perfecto, 1=peor)
+  Melanoma Recall : 0.8443
+
+  Métricas por clase:
+  Clase              Prec      Rec       F1      AUC
+  --------------------------------------------------
+  akiec            0.5942   0.8367   0.6949   0.9767
+  bcc              0.7500   0.8961   0.8166   0.9912
+  bkl              0.7039   0.6485   0.6751   0.9465
+  df               0.8667   0.7647   0.8125   0.9918
+  mel              0.4534   0.8443   0.5900   0.9324
+  nv               0.9701   0.8072   0.8812   0.9565
+  vasc             0.7778   0.9545   0.8571   0.9995
+
+              precision    recall  f1-score   support
+
+       akiec       0.59      0.84      0.69        49
+         bcc       0.75      0.90      0.82        77
+         bkl       0.70      0.65      0.68       165
+          df       0.87      0.76      0.81        17
+         mel       0.45      0.84      0.59       167
+          nv       0.97      0.81      0.88      1006
+        vasc       0.78      0.95      0.86        22
+
+    accuracy                           0.80      1503
+   macro avg       0.73      0.82      0.76      1503
+weighted avg       0.86      0.80      0.82      1503
+
+  Matriz de confusión guardada en: /home/maialen/PFG/outputs/figures/prep_colorconstancy__meta_age+localization__seed_42_confusion_matrix.png
+  Probabilidades guardadas en:     /home/maialen/PFG/outputs/probs/prep_colorconstancy__meta_age+localization__seed_42_probs.npy
+  Resultados guardados en:         outputs/results_seed.csv
+
+Experimento finalizado: prep_colorconstancy__meta_age+localization__seed_42
+Métricas finales: {'experiment': 'prep_colorconstancy__meta_age+localization__seed_42', 'preprocess': 'colorconstancy', 'metadata': 'age+localization', 'macro_f1': 0.761, 'macro_recall': 0.8217, 'macro_precision': 0.7309, 'roc_auc': 0.9707, 'map': 0.8526, 'brier_score': 0.0426, 'melanoma_recall': 0.8443, 'akiec_precision': 0.5942, 'akiec_recall': 0.8367, 'akiec_f1': 0.6949, 'akiec_auc': 0.9767, 'bcc_precision': 0.75, 'bcc_recall': 0.8961, 'bcc_f1': 0.8166, 'bcc_auc': 0.9912, 'bkl_precision': 0.7039, 'bkl_recall': 0.6485, 'bkl_f1': 0.6751, 'bkl_auc': 0.9465, 'df_precision': 0.8667, 'df_recall': 0.7647, 'df_f1': 0.8125, 'df_auc': 0.9918, 'mel_precision': 0.4534, 'mel_recall': 0.8443, 'mel_f1': 0.59, 'mel_auc': 0.9324, 'nv_precision': 0.9701, 'nv_recall': 0.8072, 'nv_f1': 0.8812, 'nv_auc': 0.9565, 'vasc_precision': 0.7778, 'vasc_recall': 0.9545, 'vasc_f1': 0.8571, 'vasc_auc': 0.9995}

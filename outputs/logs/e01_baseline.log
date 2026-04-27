@@ -1,0 +1,71 @@
+nohup: no se tendrá en cuenta la entrada
+
+Experimento  : prep_none__meta_none
+Preprocesado : none
+Metadatos    : ninguno
+Device       : cuda
+
+============================================================
+Experimento: prep_none__meta_none
+Device: cuda
+Train: 7009 | Val: 1503
+============================================================
+
+/home/maialen/pfg-venv/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:60: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+Epoch 01/30 | Train Loss: 1.6575 Acc: 0.6271 | Val Loss: 1.1159 Acc: 0.6700
+  ✓ Mejor modelo guardado (val_loss: 1.1159)
+Epoch 02/30 | Train Loss: 0.9924 Acc: 0.6683 | Val Loss: 0.7672 Acc: 0.7239
+  ✓ Mejor modelo guardado (val_loss: 0.7672)
+Epoch 03/30 | Train Loss: 0.7244 Acc: 0.7194 | Val Loss: 0.6588 Acc: 0.7352
+  ✓ Mejor modelo guardado (val_loss: 0.6588)
+Epoch 04/30 | Train Loss: 0.6119 Acc: 0.7480 | Val Loss: 0.6334 Acc: 0.7572
+  ✓ Mejor modelo guardado (val_loss: 0.6334)
+Epoch 05/30 | Train Loss: 0.5479 Acc: 0.7707 | Val Loss: 0.6962 Acc: 0.7778
+Epoch 06/30 | Train Loss: 0.4639 Acc: 0.7893 | Val Loss: 0.6433 Acc: 0.7804
+Epoch 07/30 | Train Loss: 0.4055 Acc: 0.8121 | Val Loss: 0.6473 Acc: 0.8011
+Epoch 08/30 | Train Loss: 0.3765 Acc: 0.8058 | Val Loss: 0.6538 Acc: 0.8031
+Epoch 09/30 | Train Loss: 0.2680 Acc: 0.8469 | Val Loss: 0.6252 Acc: 0.8257
+  ✓ Mejor modelo guardado (val_loss: 0.6252)
+Epoch 10/30 | Train Loss: 0.2606 Acc: 0.8568 | Val Loss: 0.6948 Acc: 0.8430
+Epoch 11/30 | Train Loss: 0.2294 Acc: 0.8575 | Val Loss: 0.6634 Acc: 0.8071
+Epoch 12/30 | Train Loss: 0.2120 Acc: 0.8713 | Val Loss: 0.6819 Acc: 0.8290
+Epoch 13/30 | Train Loss: 0.2012 Acc: 0.8784 | Val Loss: 0.6864 Acc: 0.8410
+Epoch 14/30 | Train Loss: 0.1692 Acc: 0.8960 | Val Loss: 0.6857 Acc: 0.8556
+Epoch 15/30 | Train Loss: 0.1654 Acc: 0.8939 | Val Loss: 0.6434 Acc: 0.8496
+Epoch 16/30 | Train Loss: 0.1560 Acc: 0.9014 | Val Loss: 0.6636 Acc: 0.8483
+
+Early stopping en epoch 16
+
+Entrenamiento completado. Mejor val_loss: 0.6252
+Modelo guardado en: /home/maialen/PFG/outputs/models/prep_none__meta_none_best.pth
+/home/maialen/PFG/experiments/run.py:87: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(best_model_path, map_location=device))
+
+============================================================
+Resultados: prep_none__meta_none
+============================================================
+  Macro F1      : 0.7542
+  Macro Recall  : 0.8117
+  ROC-AUC       : 0.9680
+  Melanoma Recall: 0.6946
+
+              precision    recall  f1-score   support
+
+       akiec       0.57      0.80      0.67        49
+         bcc       0.72      0.83      0.77        77
+         bkl       0.65      0.74      0.69       165
+          df       0.72      0.76      0.74        17
+         mel       0.53      0.69      0.60       167
+          nv       0.96      0.86      0.91      1006
+        vasc       0.81      1.00      0.90        22
+
+    accuracy                           0.82      1503
+   macro avg       0.71      0.81      0.75      1503
+weighted avg       0.85      0.82      0.83      1503
+
+Matriz de confusión guardada en: /home/maialen/PFG/outputs/figures/prep_none__meta_none_confusion_matrix.png
+Resultados guardados en: /home/maialen/PFG/outputs/results.csv
+
+Experimento finalizado: prep_none__meta_none
+Métricas finales: {'experiment': 'prep_none__meta_none', 'preprocess': 'none', 'metadata': 'none', 'macro_f1': 0.7542, 'macro_recall': 0.8117, 'roc_auc': 0.968, 'melanoma_recall': 0.6946}

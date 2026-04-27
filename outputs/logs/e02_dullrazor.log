@@ -1,0 +1,73 @@
+nohup: no se tendrá en cuenta la entrada
+
+Experimento  : prep_dullrazor__meta_none
+Preprocesado : dullrazor
+Metadatos    : ninguno
+Device       : cuda
+
+============================================================
+Experimento: prep_dullrazor__meta_none
+Device: cuda
+Train: 7009 | Val: 1503
+============================================================
+
+/home/maialen/pfg-venv/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:60: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+Epoch 01/30 | Train Loss: 1.6758 Acc: 0.4972 | Val Loss: 1.2362 Acc: 0.6108
+  ✓ Mejor modelo guardado (val_loss: 1.2362)
+Epoch 02/30 | Train Loss: 1.1184 Acc: 0.6516 | Val Loss: 0.8891 Acc: 0.6653
+  ✓ Mejor modelo guardado (val_loss: 0.8891)
+Epoch 03/30 | Train Loss: 0.8223 Acc: 0.6991 | Val Loss: 0.8345 Acc: 0.7212
+  ✓ Mejor modelo guardado (val_loss: 0.8345)
+Epoch 04/30 | Train Loss: 0.7061 Acc: 0.7238 | Val Loss: 0.7257 Acc: 0.7392
+  ✓ Mejor modelo guardado (val_loss: 0.7257)
+Epoch 05/30 | Train Loss: 0.6509 Acc: 0.7358 | Val Loss: 0.7559 Acc: 0.7412
+Epoch 06/30 | Train Loss: 0.5463 Acc: 0.7507 | Val Loss: 0.6761 Acc: 0.7691
+  ✓ Mejor modelo guardado (val_loss: 0.6761)
+Epoch 07/30 | Train Loss: 0.4610 Acc: 0.7746 | Val Loss: 0.8247 Acc: 0.7591
+Epoch 08/30 | Train Loss: 0.4577 Acc: 0.7674 | Val Loss: 0.7010 Acc: 0.7884
+Epoch 09/30 | Train Loss: 0.3702 Acc: 0.8062 | Val Loss: 0.7256 Acc: 0.7904
+Epoch 10/30 | Train Loss: 0.3618 Acc: 0.8177 | Val Loss: 0.8056 Acc: 0.8237
+Epoch 11/30 | Train Loss: 0.2993 Acc: 0.8355 | Val Loss: 0.7766 Acc: 0.7971
+Epoch 12/30 | Train Loss: 0.2662 Acc: 0.8493 | Val Loss: 0.6738 Acc: 0.8210
+  ✓ Mejor modelo guardado (val_loss: 0.6738)
+Epoch 13/30 | Train Loss: 0.2423 Acc: 0.8535 | Val Loss: 0.7096 Acc: 0.8124
+Epoch 14/30 | Train Loss: 0.2339 Acc: 0.8609 | Val Loss: 0.7372 Acc: 0.8350
+Epoch 15/30 | Train Loss: 0.2107 Acc: 0.8690 | Val Loss: 0.7283 Acc: 0.8350
+Epoch 16/30 | Train Loss: 0.1939 Acc: 0.8847 | Val Loss: 0.7418 Acc: 0.8357
+Epoch 17/30 | Train Loss: 0.1746 Acc: 0.8934 | Val Loss: 0.7663 Acc: 0.8430
+Epoch 18/30 | Train Loss: 0.1717 Acc: 0.8879 | Val Loss: 0.7355 Acc: 0.8443
+Epoch 19/30 | Train Loss: 0.1519 Acc: 0.8961 | Val Loss: 0.7415 Acc: 0.8430
+
+Early stopping en epoch 19
+
+Entrenamiento completado. Mejor val_loss: 0.6738
+Modelo guardado en: /home/maialen/PFG/outputs/models/prep_dullrazor__meta_none_best.pth
+
+============================================================
+Resultados: prep_dullrazor__meta_none
+============================================================
+  Macro F1      : 0.7327
+  Macro Recall  : 0.8026
+  ROC-AUC       : 0.9687
+  Melanoma Recall: 0.6886
+
+              precision    recall  f1-score   support
+
+       akiec       0.55      0.78      0.64        49
+         bcc       0.68      0.82      0.74        77
+         bkl       0.73      0.71      0.72       165
+          df       0.74      0.82      0.78        17
+         mel       0.52      0.69      0.59       167
+          nv       0.94      0.85      0.89      1006
+        vasc       0.64      0.95      0.76        22
+
+    accuracy                           0.81      1503
+   macro avg       0.68      0.80      0.73      1503
+weighted avg       0.84      0.81      0.82      1503
+
+Matriz de confusión guardada en: /home/maialen/PFG/outputs/figures/prep_dullrazor__meta_none_confusion_matrix.png
+Resultados guardados en: /home/maialen/PFG/outputs/results.csv
+
+Experimento finalizado: prep_dullrazor__meta_none
+Métricas finales: {'experiment': 'prep_dullrazor__meta_none', 'preprocess': 'dullrazor', 'metadata': 'none', 'macro_f1': 0.7327, 'macro_recall': 0.8026, 'roc_auc': 0.9687, 'melanoma_recall': 0.6886}

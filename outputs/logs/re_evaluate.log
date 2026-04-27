@@ -1,0 +1,9 @@
+nohup: no se tendrá en cuenta la entrada
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/maialen/PFG/experiments/re_evaluate.py", line 25, in <module>
+    from src.config import (
+ImportError: cannot import name 'DEVICE' from 'src.config' (/home/maialen/PFG/src/config.py)

@@ -1,0 +1,106 @@
+{
+  "correct_melanoma": [
+    {
+      "idx": 385,
+      "image_id": "ISIC_0032531",
+      "true_class": "mel",
+      "pred_class": "mel",
+      "confidence": 0.9998466372489929,
+      "prob_mel": 0.9998466372489929
+    },
+    {
+      "idx": 230,
+      "image_id": "ISIC_0033204",
+      "true_class": "mel",
+      "pred_class": "mel",
+      "confidence": 0.9993812441825867,
+      "prob_mel": 0.9993812441825867
+    },
+    {
+      "idx": 719,
+      "image_id": "ISIC_0029212",
+      "true_class": "mel",
+      "pred_class": "mel",
+      "confidence": 0.9993181228637695,
+      "prob_mel": 0.9993181228637695
+    }
+  ],
+  "critical_error": [
+    {
+      "idx": 570,
+      "image_id": "ISIC_0033444",
+      "true_class": "mel",
+      "pred_class": "nv",
+      "confidence": 0.991177499294281,
+      "prob_mel": 0.008481587283313274
+    },
+    {
+      "idx": 1427,
+      "image_id": "ISIC_0028003",
+      "true_class": "mel",
+      "pred_class": "nv",
+      "confidence": 0.9690805077552795,
+      "prob_mel": 0.02841261960566044
+    },
+    {
+      "idx": 50,
+      "image_id": "ISIC_0028173",
+      "true_class": "mel",
+      "pred_class": "nv",
+      "confidence": 0.8711023330688477,
+      "prob_mel": 0.000558608619030565
+    }
+  ],
+  "high_uncertainty": [
+    {
+      "idx": 684,
+      "image_id": "ISIC_0030008",
+      "true_class": "nv",
+      "pred_class": "bkl",
+      "confidence": 0.2715030610561371,
+      "prob_mel": 0.2405402809381485
+    },
+    {
+      "idx": 353,
+      "image_id": "ISIC_0033910",
+      "true_class": "bkl",
+      "pred_class": "bcc",
+      "confidence": 0.2814350128173828,
+      "prob_mel": 0.1522718071937561
+    },
+    {
+      "idx": 143,
+      "image_id": "ISIC_0033396",
+      "true_class": "nv",
+      "pred_class": "nv",
+      "confidence": 0.297245591878891,
+      "prob_mel": 0.2967343330383301
+    }
+  ],
+  "correct_non_mel": [
+    {
+      "idx": 882,
+      "image_id": "ISIC_0025976",
+      "true_class": "nv",
+      "pred_class": "nv",
+      "confidence": 0.9999961853027344,
+      "prob_mel": 3.688915057864506e-06
+    },
+    {
+      "idx": 874,
+      "image_id": "ISIC_0024603",
+      "true_class": "nv",
+      "pred_class": "nv",
+      "confidence": 0.9999940991401672,
+      "prob_mel": 5.868563675903715e-06
+    },
+    {
+      "idx": 655,
+      "image_id": "ISIC_0027426",
+      "true_class": "nv",
+      "pred_class": "nv",
+      "confidence": 0.9999925494194031,
+      "prob_mel": 7.322198598558316e-06
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Large data and model files
+data/
+outputs/models/
+outputs/probs/
+outputs/xai/heatmaps/
+
+# Virtual environment
+pfg-venv/
+__pycache__/
+*.pyc
+*.pth
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
