@@ -208,7 +208,7 @@ class GradCAM:
         weights = grads.mean(dim=(2, 3), keepdim=True)
         cam = (weights * acts).sum(dim=1).squeeze(0)
         cam = F.relu(torch.tensor(cam)).numpy()
-        cam = cv2.resize(cam, (224, 224))
+        cam = np.array(Image.fromarray(cam).resize((224, 224)))
         cam = np.clip(cam, 0, None)
         if cam.max() > 0:
             cam /= cam.max()
