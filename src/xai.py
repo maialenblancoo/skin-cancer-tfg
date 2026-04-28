@@ -349,8 +349,7 @@ def run_smoothgrad(model: SkinLesionModel, img_tensor: torch.Tensor,
         grad_max, _ = grad.max(dim=0)                # (224, 224)
         accumulated_grads += grad_max.detach().cpu()
 
-    smoothgrad = (accumulated_grads / n_samples)
-    #smoothgrad, _ = smoothgrad.max(dim=0)   # collapse channels → (224, 224)
+    smoothgrad = (accumulated_grads / n_samples).max(dim=0).values  # (224, 224)
     smoothgrad = smoothgrad.numpy()
 
     # Normalise to [0, 1]
