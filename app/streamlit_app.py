@@ -225,6 +225,33 @@ def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
     overlay = (alpha * heatmap_colored + (1 - alpha) * img_resized).astype(np.uint8)
     return overlay
 
+def compute_saliency(model, device, pil_img: Image.Image,
+                     meta_tensor: torch.Tensor,
+                     target_class: int) -> np.ndarray:
+    """Vanilla Gradient saliency map. Returns RGB heatmap (224, 224, 3)."""
+    tfm = T.Compose([
+        T.Resize((224, 224)),
+        T.ToTensor(),
+        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
+    img_t = tfm(pil_img).unsqueeze(0).to(device)
+    img_t.requires_grad_(True)
+    meta = meta_tensor.to(device)
+
+    model.zero_grad()
+    logits = model(img_t, meta)
+    logits[0, target_class].backward()
+
+    # Take max across channels, normalise to [0,1]
+    saliency = img_t.grad.data.abs().squeeze(0)          # (3, 224, 224)
+    saliency, _ = torch.max(saliency, dim=0)             # (224, 224)
+    saliency = saliency.cpu().numpy()
+    saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min() + 1e-8)
+
+    # Apply jet colormap
+    colormap = plt.get_cmap("hot")
+    saliency_rgb = (colormap(saliency)[:, :, :3] * 255).astype(np.uint8)
+    return saliency_rgb
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SHAP (metadata branch)
@@ -477,10 +504,11 @@ if analyze_btn or "last_result" in st.session_state:
         pred_idx, pred_name, confidence = apply_threshold(probs)
 
         # Grad-CAM
-        with st.spinner("Computing Grad-CAM…"):
-            gcam    = GradCAM(model, device)
-            heatmap = gcam.generate(pil_cc, meta_t, pred_idx)
-            overlay = overlay_heatmap(img_cc, heatmap)
+        with st.spinner("Computing Grad-CAM and Saliency Map…"):
+            gcam     = GradCAM(model, device)
+            heatmap  = gcam.generate(pil_cc, meta_t, pred_idx)
+            overlay  = overlay_heatmap(img_cc, heatmap)
+            saliency = compute_saliency(model, device, pil_cc, meta_t, pred_idx)
 
         # SHAP (optional)
         shap_vals = None
@@ -493,7 +521,7 @@ if analyze_btn or "last_result" in st.session_state:
         st.session_state["last_result"] = {
             "probs": probs, "pred_idx": pred_idx,
             "pred_name": pred_name, "confidence": confidence,
-            "overlay": overlay, "shap_vals": shap_vals,
+            "overlay": overlay, "saliency": saliency, "shap_vals": shap_vals,
         }
 
     # Retrieve cached result
@@ -503,6 +531,7 @@ if analyze_btn or "last_result" in st.session_state:
     pred_name  = res["pred_name"]
     confidence = res["confidence"]
     overlay    = res["overlay"]
+    saliency   = res["saliency"]
     shap_vals  = res["shap_vals"]
 
     # ── LAYOUT ────────────────────────────────────────────────────────────────
