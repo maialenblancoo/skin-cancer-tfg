@@ -188,7 +188,7 @@ def render_probability_bar(class_name: str, label: str,
 
 def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
     """Horizontal bar chart for SHAP metadata values."""
-    meta_np = meta_tensor.numpy()[0]
+    #meta_np = meta_tensor.numpy()[0]
     indices = np.argsort(np.abs(shap_vals))[::-1][:10]   # top 10
 
     features = []
