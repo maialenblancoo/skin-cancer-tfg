@@ -545,8 +545,10 @@ def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
     heatmap_clipped = np.clip(heatmap, 0.0, 1.0).astype(np.float32)
     heatmap_uint8 = np.uint8(255 * heatmap_clipped)
     heatmap_color = cv2.applyColorMap(heatmap_uint8, colormap)
-    heatmap_rgb = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
-    overlay = cv2.addWeighted(img_rgb, 1 - alpha, heatmap_rgb, alpha, 0)
+    heatmap_rgb   = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+    h, w          = heatmap_rgb.shape[:2]
+    img_resized   = cv2.resize(img_rgb, (w, h))
+    overlay       = cv2.addWeighted(img_resized, 1 - alpha, heatmap_rgb, alpha, 0)
     return overlay
 
 
