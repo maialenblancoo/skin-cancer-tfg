@@ -405,9 +405,13 @@ if analyze_btn or "last_result" in st.session_state:
     # LEFT — images
     with col1:
         st.markdown('<p class="section-title">Input image</p>', unsafe_allow_html=True)
-        # Row 1 — original
-        st.image(pil_img, caption="Original", use_container_width=True)
-        # Row 2 — Grad-CAM + Saliency
+        # Row 1 — original + color constancy
+        orig_col, cc_col = st.columns(2)
+        with orig_col:
+            st.image(pil_img, caption="Original", use_container_width=True)
+        with cc_col:
+            st.image(pil_cc, caption="Color Constancy", use_container_width=True)
+        # Row 2 — Grad-CAM + SmoothGrad
         cam_col, sal_col = st.columns(2)
         with cam_col:
             st.image(overlay, caption="Grad-CAM", use_container_width=True)
