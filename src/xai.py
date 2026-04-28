@@ -524,7 +524,10 @@ def select_representative_cases(probs: np.ndarray, labels: np.ndarray,
 # ---------------------------------------------------------------------------
 
 def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
-                     alpha: float = 0.45, colormap=cv2.COLORMAP_JET) -> np.ndarray:
+                    alpha: float = 0.45, colormap=None) -> np.ndarray:
+    import cv2
+    if colormap is None:
+        colormap = cv2.COLORMAP_JET
     """
     Overlay a heatmap on an RGB image using a colourmap.
 
