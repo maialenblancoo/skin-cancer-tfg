@@ -263,10 +263,12 @@ def compute_saliency(model, device, pil_img: Image.Image,
     saliency = saliency.cpu().numpy()
     saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min() + 1e-8)
 
-    # Apply colormap
-    colormap   = plt.get_cmap("hot")
-    saliency_rgb = (colormap(saliency)[:, :, :3] * 255).astype(np.uint8)
-    return saliency_rgb
+    # Overlay on original image (same as Grad-CAM)
+    img_resized = np.array(pil_img.resize((224, 224)))
+    colormap = plt.get_cmap("hot")
+    saliency_colored = (colormap(saliency)[:, :, :3] * 255).astype(np.uint8)
+    overlay = (0.45 * saliency_colored + 0.55 * img_resized).astype(np.uint8)
+    return overlay
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SHAP (metadata branch)
@@ -563,7 +565,7 @@ if analyze_btn or "last_result" in st.session_state:
             st.image(overlay, caption="Grad-CAM", use_container_width=True)
         with sal_col:
             if saliency is not None:
-                st.image(saliency, caption="Saliency Map", use_container_width=True)
+                st.image(saliency, caption="SmoothGrad", use_container_width=True)
 
         if shap_vals is not None:
             st.markdown('<p class="section-title">Metadata influence (SHAP)</p>',
