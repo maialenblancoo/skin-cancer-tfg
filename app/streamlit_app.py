@@ -227,29 +227,44 @@ def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
 
 def compute_saliency(model, device, pil_img: Image.Image,
                      meta_tensor: torch.Tensor,
-                     target_class: int) -> np.ndarray:
-    """Vanilla Gradient saliency map. Returns RGB heatmap (224, 224, 3)."""
+                     target_class: int,
+                     n_samples: int = 25,
+                     noise_level: float = 0.15) -> np.ndarray:
+    """
+    SmoothGrad saliency map.
+    Averages gradients over n_samples noisy copies of the input,
+    producing a cleaner and more interpretable map than vanilla gradients.
+    Returns RGB heatmap (224, 224, 3).
+    """
     tfm = T.Compose([
         T.Resize((224, 224)),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ])
-    img_t = tfm(pil_img).unsqueeze(0).to(device)
-    img_t.requires_grad_(True)
-    meta = meta_tensor.to(device)
+    img_t = tfm(pil_img).unsqueeze(0).to(device)  # (1, 3, 224, 224)
+    meta  = meta_tensor.to(device)
 
-    model.zero_grad()
-    logits = model(img_t, meta)
-    logits[0, target_class].backward()
+    # Noise std = noise_level * (max - min) of input
+    noise_std = noise_level * (img_t.max() - img_t.min()).item()
 
-    # Take max across channels, normalise to [0,1]
-    saliency = img_t.grad.data.abs().squeeze(0)          # (3, 224, 224)
-    saliency, _ = torch.max(saliency, dim=0)             # (224, 224)
+    accumulated = torch.zeros_like(img_t)
+
+    for _ in range(n_samples):
+        noisy = img_t + torch.randn_like(img_t) * noise_std
+        noisy.requires_grad_(True)
+        model.zero_grad()
+        logits = model(noisy, meta)
+        logits[0, target_class].backward()
+        accumulated += noisy.grad.data.abs()
+
+    # Average and collapse channels
+    avg = (accumulated / n_samples).squeeze(0)   # (3, 224, 224)
+    saliency, _ = torch.max(avg, dim=0)          # (224, 224)
     saliency = saliency.cpu().numpy()
     saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min() + 1e-8)
 
-    # Apply jet colormap
-    colormap = plt.get_cmap("hot")
+    # Apply colormap
+    colormap   = plt.get_cmap("hot")
     saliency_rgb = (colormap(saliency)[:, :, :3] * 255).astype(np.uint8)
     return saliency_rgb
 
@@ -531,7 +546,7 @@ if analyze_btn or "last_result" in st.session_state:
     pred_name  = res["pred_name"]
     confidence = res["confidence"]
     overlay    = res["overlay"]
-    saliency   = res["saliency"]
+    saliency   = res.get("saliency", None)
     shap_vals  = res["shap_vals"]
 
     # ── LAYOUT ────────────────────────────────────────────────────────────────
@@ -547,7 +562,8 @@ if analyze_btn or "last_result" in st.session_state:
         with cam_col:
             st.image(overlay, caption="Grad-CAM", use_container_width=True)
         with sal_col:
-            st.image(saliency, caption="Saliency Map", use_container_width=True)
+            if saliency is not None:
+                st.image(saliency, caption="Saliency Map", use_container_width=True)
 
         if shap_vals is not None:
             st.markdown('<p class="section-title">Metadata influence (SHAP)</p>',
