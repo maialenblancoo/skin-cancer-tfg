@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import torchvision.transforms as T
 from PIL import Image
 import streamlit as st
+import cv2
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -83,7 +84,7 @@ def load_model():
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model  = SkinLesionModel(metadata_dim=METADATA_DIM)
-    state  = torch.load(weights_path, map_location=device)
+    state  = torch.load(weights_path, map_location=device, weights_only=True)
     model.load_state_dict(state)
     model.to(device)
     model.eval()
@@ -185,8 +186,7 @@ def render_probability_bar(class_name: str, label: str,
     """, unsafe_allow_html=True)
 
 
-def render_shap_plot(shap_vals: np.ndarray, meta_tensor: torch.Tensor,
-                     age: float) -> plt.Figure:
+def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
     """Horizontal bar chart for SHAP metadata values."""
     meta_np = meta_tensor.numpy()[0]
     indices = np.argsort(np.abs(shap_vals))[::-1][:10]   # top 10
@@ -329,8 +329,11 @@ if not uploaded_file:
     st.stop()
 
 # Load image
+# Load image — resize a 224×224 antes de color constancy
+# Grad-CAM & SmoothGrad always compatibles
 pil_img  = Image.open(uploaded_file).convert("RGB")
-img_cc   = color_constancy(np.array(pil_img))
+pil_224  = pil_img.resize((224, 224), Image.LANCZOS)
+img_cc   = color_constancy(np.array(pil_224))
 pil_cc   = Image.fromarray(img_cc)
 meta_t   = build_metadata_vector(age, location)
 
@@ -358,13 +361,22 @@ if analyze_btn or "last_result" in st.session_state:
         with st.spinner("Computing SmoothGrad (25 samples)..."):
             heatmap_sg = run_smoothgrad(model, img_t, meta_t.to(device), pred_idx)
             import cv2
-            saliency   = overlay_heatmap(img_cc, heatmap_sg, colormap=cv2.COLORMAP_HOT)
+            saliency = overlay_heatmap(img_cc, heatmap_sg, colormap=cv2.COLORMAP_HOT)
 
         shap_vals = None
         if run_shap:
             with st.spinner("Computing SHAP values (~30 s)..."):
+                rng = np.random.default_rng(42)
                 background = np.zeros((50, METADATA_DIM), dtype=np.float32)
-                background[:, 0] = np.random.uniform(0, 1, 50)
+                # age: uniform distribution between 0.2 - 0.6 (18–55 años normalizados por 90)
+                background[:, 0] = rng.uniform(0.2, 0.6, 50)
+                # localizations: assign most frequent from train (back, lower extremity, trunk)
+                loc_weights = [0.04, 0.01, 0.22, 0.04, 0.01, 0.05,
+                            0.02, 0.01, 0.02, 0.21, 0.03, 0.04,
+                            0.12, 0.03, 0.11]
+                for i in range(50):
+                    loc_idx = rng.choice(15, p=loc_weights/np.array(loc_weights).sum())
+                    background[i, 1 + loc_idx] = 1.0
                 shap_vals = run_shap_metadata(
                     model, img_t, meta_t.to(device),
                     background_meta=background,
@@ -406,7 +418,7 @@ if analyze_btn or "last_result" in st.session_state:
         if shap_vals is not None:
             st.markdown('<p class="section-title">Metadata influence (SHAP)</p>',
                         unsafe_allow_html=True)
-            fig = render_shap_plot(shap_vals, meta_t, age)
+            fig = render_shap_plot(shap_vals, age)
             st.pyplot(fig)
             plt.close(fig)
 
