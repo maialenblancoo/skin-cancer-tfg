@@ -540,11 +540,14 @@ if analyze_btn or "last_result" in st.session_state:
     # LEFT — images
     with col1:
         st.markdown('<p class="section-title">Input image</p>', unsafe_allow_html=True)
-        img_col, cam_col = st.columns(2)
-        with img_col:
-            st.image(pil_img, caption="Original", use_container_width=True)
+        # Row 1 — original
+        st.image(pil_img, caption="Original", use_container_width=True)
+        # Row 2 — Grad-CAM + Saliency
+        cam_col, sal_col = st.columns(2)
         with cam_col:
             st.image(overlay, caption="Grad-CAM", use_container_width=True)
+        with sal_col:
+            st.image(saliency, caption="Saliency Map", use_container_width=True)
 
         if shap_vals is not None:
             st.markdown('<p class="section-title">Metadata influence (SHAP)</p>',
