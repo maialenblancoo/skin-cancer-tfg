@@ -429,8 +429,12 @@ def run_shap_metadata(model: SkinLesionModel, img_tensor: torch.Tensor,
     shap_values = explainer.shap_values(
         meta_tensor.cpu().numpy(), nsamples=200, silent=True
     )
-    # shap_values is a list of 7 arrays (one per class), each shape (1, 16)
-    return shap_values[target_class][0]  # shape (16,)
+    # Versiones recientes de SHAP devuelven np.ndarray (1, 16, 7) en lugar de
+    # lista de 7 arrays (1, 16) — manejamos ambos formatos
+    if isinstance(shap_values, list):
+        return shap_values[target_class][0]   # shape (16,)
+    else:
+        return shap_values[0, :, target_class]  # shape (16,)
 
 
 # ---------------------------------------------------------------------------
