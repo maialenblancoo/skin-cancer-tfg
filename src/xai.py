@@ -41,11 +41,7 @@ import torch.nn.functional as F
 from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import cv2
 import shap
-
-from pytorch_grad_cam import GradCAM, GradCAMPlusPlus
-from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
 from src.config import CLASSES, NUM_CLASSES
 from src.model import SkinLesionModel
@@ -209,6 +205,9 @@ def run_gradcam(model: SkinLesionModel, img_tensor: torch.Tensor,
     Returns:
         heatmap : np.ndarray of shape (224, 224), values in [0, 1].
     """
+    from pytorch_grad_cam import GradCAM
+    from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+
     wrapped = _ImageBranchWrapper(model, meta_tensor)
     target_layers = _get_target_layer(model)
 
@@ -239,6 +238,9 @@ def run_gradcam_plus(model: SkinLesionModel, img_tensor: torch.Tensor,
     Returns:
         heatmap : np.ndarray of shape (224, 224), values in [0, 1].
     """
+    from pytorch_grad_cam import GradCAMPlusPlus
+    from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+
     wrapped = _ImageBranchWrapper(model, meta_tensor)
     target_layers = _get_target_layer(model)
 
@@ -535,6 +537,8 @@ def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
     Returns:
         overlay : np.ndarray (224, 224, 3) uint8 — blended image.
     """
+    import cv2
+
     heatmap_clipped = np.clip(heatmap, 0.0, 1.0).astype(np.float32)
     heatmap_uint8 = np.uint8(255 * heatmap_clipped)
     heatmap_color = cv2.applyColorMap(heatmap_uint8, colormap)
@@ -568,6 +572,8 @@ def plot_visual_explanations(img_rgb: np.ndarray,
     Returns:
         fig : matplotlib Figure object.
     """
+    import cv2
+
     gradcam_overlay    = overlay_heatmap(img_rgb, gradcam)
     gradcam_p_overlay  = overlay_heatmap(img_rgb, gradcam_plus)
     vanilla_overlay    = overlay_heatmap(img_rgb, vanilla, colormap=cv2.COLORMAP_HOT)
@@ -690,6 +696,8 @@ def plot_combined_explanation(img_rgb: np.ndarray,
     Returns:
         fig : matplotlib Figure object.
     """
+    import cv2
+    
     gradcam_overlay    = overlay_heatmap(img_rgb, gradcam)
     gradcam_p_overlay  = overlay_heatmap(img_rgb, gradcam_plus)
     vanilla_overlay    = overlay_heatmap(img_rgb, vanilla, colormap=cv2.COLORMAP_HOT)
