@@ -28,6 +28,13 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from src.model import SkinLesionModel
+from src.xai import (
+    run_gradcam,
+    run_smoothgrad,
+    overlay_heatmap,
+    run_shap_metadata,
+    METADATA_FEATURE_NAMES,
+)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -150,188 +157,6 @@ def apply_threshold(probs: np.ndarray) -> tuple[int, str, float]:
     confidence = float(probs[pred_idx])
     return pred_idx, CLASS_NAMES[pred_idx], confidence
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# GRAD-CAM
-# ══════════════════════════════════════════════════════════════════════════════
-
-class GradCAM:
-    """Minimal Grad-CAM for EfficientNet-B0 image branch."""
-
-    def __init__(self, model, device):
-        self.model  = model
-        self.device = device
-        self.target_layer = model.image_branch.backbone.blocks[-1]
-        self._activations = None
-        self._gradients   = None
-        self._hooks       = []
-
-    def _register(self):
-        self._hooks.append(
-            self.target_layer.register_forward_hook(
-                lambda m, i, o: setattr(self, "_activations", o)
-            )
-        )
-        self._hooks.append(
-            self.target_layer.register_full_backward_hook(
-                lambda m, gi, go: setattr(self, "_gradients", go[0])
-            )
-        )
-
-    def _remove(self):
-        for h in self._hooks:
-            h.remove()
-        self._hooks.clear()
-
-    def generate(self, pil_img: Image.Image,
-                 meta_tensor: torch.Tensor,
-                 target_class: int) -> np.ndarray:
-        """Return Grad-CAM heatmap (H, W) normalised to [0, 1]."""
-        self._register()
-        tfm = T.Compose([
-            T.Resize((224, 224)),
-            T.ToTensor(),
-            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ])
-        img_t  = tfm(pil_img).unsqueeze(0).to(self.device)
-        meta   = meta_tensor.to(self.device)
-        img_t.requires_grad_(True)
-
-        logits = self.model(img_t, meta)
-        self.model.zero_grad()
-        logits[0, target_class].backward()
-
-        acts  = self._activations.detach().cpu()   # (1, C, H, W)
-        grads = self._gradients.detach().cpu()      # (1, C, H, W)
-        self._remove()
-
-        weights = grads.mean(dim=(2, 3), keepdim=True)
-        cam = (weights * acts).sum(dim=1).squeeze(0)
-        cam = F.relu(torch.tensor(cam)).numpy()
-        cam = np.array(Image.fromarray(cam).resize((224, 224)))
-        cam = np.clip(cam, 0, None)
-        if cam.max() > 0:
-            cam /= cam.max()
-        return cam
-
-
-def overlay_heatmap(img_rgb: np.ndarray, heatmap: np.ndarray,
-                    alpha: float = 0.45) -> np.ndarray:
-    """Overlay Grad-CAM heatmap on RGB image using matplotlib colormap."""
-    heatmap_clipped = np.clip(heatmap, 0.0, 1.0)
-    colormap = plt.get_cmap("jet")
-    heatmap_colored = (colormap(heatmap_clipped)[:, :, :3] * 255).astype(np.uint8)
-    img_resized = np.array(Image.fromarray(img_rgb).resize((224, 224)))
-    overlay = (alpha * heatmap_colored + (1 - alpha) * img_resized).astype(np.uint8)
-    return overlay
-
-def compute_saliency(model, device, pil_img: Image.Image,
-                     meta_tensor: torch.Tensor,
-                     target_class: int,
-                     n_samples: int = 25,
-                     noise_level: float = 0.15) -> np.ndarray:
-    """
-    SmoothGrad saliency map.
-    Averages gradients over n_samples noisy copies of the input,
-    producing a cleaner and more interpretable map than vanilla gradients.
-    Returns RGB heatmap (224, 224, 3).
-    """
-    tfm = T.Compose([
-        T.Resize((224, 224)),
-        T.ToTensor(),
-        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-    ])
-    img_t = tfm(pil_img).unsqueeze(0).to(device)  # (1, 3, 224, 224)
-    meta  = meta_tensor.to(device)
-
-    # Noise std = noise_level * (max - min) of input
-    noise_std = noise_level * (img_t.max() - img_t.min()).item()
-
-    accumulated = torch.zeros_like(img_t)
-
-    for _ in range(n_samples):
-        noisy = img_t + torch.randn_like(img_t) * noise_std
-        noisy.requires_grad_(True)
-        model.zero_grad()
-        logits = model(noisy, meta)
-        logits[0, target_class].backward()
-        accumulated += noisy.grad.data.abs()
-
-    # Average and collapse channels
-    avg = (accumulated / n_samples).squeeze(0)   # (3, 224, 224)
-    saliency, _ = torch.max(avg, dim=0)          # (224, 224)
-    saliency = saliency.cpu().numpy()
-    saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min() + 1e-8)
-
-    # Overlay on original image (same as Grad-CAM)
-    img_resized = np.array(pil_img.resize((224, 224)))
-    colormap = plt.get_cmap("hot")
-    saliency_colored = (colormap(saliency)[:, :, :3] * 255).astype(np.uint8)
-    overlay = (0.45 * saliency_colored + 0.55 * img_resized).astype(np.uint8)
-    return overlay
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SHAP (metadata branch)
-# ══════════════════════════════════════════════════════════════════════════════
-
-SHAP_FEATURE_NAMES = [
-    "age",
-    "loc: abdomen", "loc: acral",   "loc: back",    "loc: chest",
-    "loc: ear",     "loc: face",    "loc: foot",    "loc: genital",
-    "loc: hand",    "loc: lower extremity", "loc: neck",
-    "loc: scalp",   "loc: trunk",   "loc: unknown", "loc: upper extremity",
-]
-
-
-def compute_shap_metadata(model, device, pil_img: Image.Image,
-                          meta_tensor: torch.Tensor,
-                          target_class: int,
-                          n_background: int = 50) -> np.ndarray:
-    """
-    SHAP KernelExplainer on the metadata branch.
-    Image features are fixed; only metadata is perturbed.
-    Returns shap_values array of shape (16,).
-    """
-    try:
-        import shap
-    except ImportError:
-        return np.zeros(METADATA_DIM)
-
-    tfm = T.Compose([
-        T.Resize((224, 224)),
-        T.ToTensor(),
-        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-    ]) 
-    img_t = tfm(pil_img).unsqueeze(0).to(device)
-
-    # Fixed image features
-    with torch.no_grad():
-        img_features = model.image_branch(img_t)  # (1, 256)
-
-    # Random background metadata (zeros = neutral baseline)
-    rng        = np.random.default_rng(42)
-    background = rng.uniform(0, 1, (n_background, METADATA_DIM)).astype(np.float32)
-    background[:, 0] = rng.uniform(0, 1, n_background)   # age
-    background[:, 1:] = 0.0                               # no location
-
-    def predict_fn(meta_array: np.ndarray) -> np.ndarray:
-        results = []
-        with torch.no_grad():
-            for row in meta_array:
-                m = torch.tensor(row, dtype=torch.float32).unsqueeze(0).to(device)
-                meta_feat = model.metadata_branch(m)        # (1, 64)
-                fused     = torch.cat([img_features, meta_feat], dim=1)
-                logits    = model.classifier(fused)
-                probs     = F.softmax(logits, dim=1).cpu().numpy()[0]
-                results.append(probs)
-        return np.array(results)
-
-    explainer   = shap.KernelExplainer(predict_fn, background)
-    meta_np     = meta_tensor.numpy()
-    shap_values = explainer.shap_values(meta_np, nsamples=200)
-    return shap_values[target_class][0]   # shape (16,)
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 # STREAMLIT UI
 # ══════════════════════════════════════════════════════════════════════════════
@@ -369,7 +194,7 @@ def render_shap_plot(shap_vals: np.ndarray, meta_tensor: torch.Tensor,
     features = []
     values   = []
     for i in indices:
-        name = SHAP_FEATURE_NAMES[i]
+        name = METADATA_FEATURE_NAMES[i]
         if name == "age":
             name = f"age ({age:.0f} yrs)"
         features.append(name)
@@ -520,19 +345,30 @@ if analyze_btn or "last_result" in st.session_state:
 
         pred_idx, pred_name, confidence = apply_threshold(probs)
 
-        # Grad-CAM
-        with st.spinner("Computing Grad-CAM and Saliency Map…"):
-            gcam     = GradCAM(model, device)
-            heatmap  = gcam.generate(pil_cc, meta_t, pred_idx)
-            overlay  = overlay_heatmap(img_cc, heatmap)
-            saliency = compute_saliency(model, device, pil_cc, meta_t, pred_idx)
+        img_t = T.Compose([
+            T.Resize((224, 224)),
+            T.ToTensor(),
+            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])(pil_cc).unsqueeze(0).to(device)
 
-        # SHAP (optional)
+        with st.spinner("Computing Grad-CAM..."):
+            heatmap_gc = run_gradcam(model, img_t, meta_t.to(device), pred_idx)
+            overlay    = overlay_heatmap(img_cc, heatmap_gc)
+
+        with st.spinner("Computing SmoothGrad (25 samples)..."):
+            heatmap_sg = run_smoothgrad(model, img_t, meta_t.to(device), pred_idx)
+            import cv2
+            saliency   = overlay_heatmap(img_cc, heatmap_sg, colormap=cv2.COLORMAP_HOT)
+
         shap_vals = None
         if run_shap:
-            with st.spinner("Computing SHAP values (~30 s)…"):
-                shap_vals = compute_shap_metadata(
-                    model, device, pil_cc, meta_t, pred_idx
+            with st.spinner("Computing SHAP values (~30 s)..."):
+                background = np.zeros((50, METADATA_DIM), dtype=np.float32)
+                background[:, 0] = np.random.uniform(0, 1, 50)
+                shap_vals = run_shap_metadata(
+                    model, img_t, meta_t.to(device),
+                    background_meta=background,
+                    target_class=pred_idx, n_background=50
                 )
 
         st.session_state["last_result"] = {
