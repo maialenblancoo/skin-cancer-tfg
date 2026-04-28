@@ -214,6 +214,55 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
     fig.tight_layout()
     return fig
 
+############################################ PROVISIONAL - EXPERIMENTAL
+# COMP
+def compute_image_vs_metadata_contrib(model, device, img_t, meta_t, background):
+    """Ablación marginal: contribución imagen vs metadatos a p(pred_class)."""
+    with torch.no_grad():
+        # Predicción real
+        logits_real = model(img_t, meta_t.to(device))
+        probs_real = F.softmax(logits_real, dim=1).cpu().numpy()[0]
+        pred_class = int(np.argmax(probs_real))
+
+        # Features de imagen fijas
+        img_features = model.image_branch(img_t)
+
+        # p(img real, meta background) — promedio sobre background
+        bg_tensor = torch.tensor(background, dtype=torch.float32).to(device)
+        meta_feats = model.metadata_branch(bg_tensor)
+        fused = torch.cat([img_features.expand(len(background), -1), meta_feats], dim=1)
+        probs_img_only = F.softmax(model.classifier(fused), dim=1).cpu().numpy()[:, pred_class].mean()
+
+        # p(img background, meta real) — promedio sobre background
+        img_bg_feats = model.image_branch(
+            torch.zeros_like(img_t).to(device)
+        )
+        meta_feat_real = model.metadata_branch(meta_t.to(device))
+        fused2 = torch.cat([img_bg_feats.expand(1, -1), meta_feat_real], dim=1)
+        probs_meta_only = F.softmax(model.classifier(fused2), dim=1).cpu().numpy()[0, pred_class]
+
+    contrib_img  = abs(float(probs_real[pred_class]) - float(probs_meta_only))
+    contrib_meta = abs(float(probs_real[pred_class]) - float(probs_img_only))
+    return contrib_img, contrib_meta, pred_class
+
+def render_contrib_plot(contrib_img, contrib_meta):
+    """Bar chart imagen vs metadatos."""
+    fig, ax = plt.subplots(figsize=(4, 2.5))
+    bars = ax.barh(
+        ["Image", "Metadata"],
+        [contrib_img, contrib_meta],
+        color=["#3182ce", "#e53e3e"],
+        height=0.5,
+    )
+    ax.set_xlabel("Contribution to p(predicted class)", fontsize=9)
+    ax.set_title("Image vs Metadata influence", fontsize=10, fontweight="bold")
+    for bar, val in zip(bars, [contrib_img, contrib_meta]):
+        ax.text(val + 0.001, bar.get_y() + bar.get_height()/2,
+                f"{val:.4f}", va="center", fontsize=9)
+    ax.set_xlim(0, max(contrib_img, contrib_meta) * 1.3)
+    fig.tight_layout()
+    return fig
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -363,6 +412,8 @@ if analyze_btn or "last_result" in st.session_state:
             import cv2
             saliency = overlay_heatmap(img_cc, heatmap_sg, colormap=cv2.COLORMAP_HOT)
 
+        contrib_img  = None
+        contrib_meta = None
         shap_vals = None
         if run_shap:
             with st.spinner("Computing SHAP values (~30 s)..."):
@@ -382,11 +433,17 @@ if analyze_btn or "last_result" in st.session_state:
                     background_meta=background,
                     target_class=pred_idx, n_background=50
                 )
+                # PROB
+                contrib_img, contrib_meta, _ = compute_image_vs_metadata_contrib(
+                    model, device, img_t, meta_t, background
+                )
 
         st.session_state["last_result"] = {
             "probs": probs, "pred_idx": pred_idx,
             "pred_name": pred_name, "confidence": confidence,
             "overlay": overlay, "saliency": saliency, "shap_vals": shap_vals,
+            # PROB
+            "contrib_img": contrib_img, "contrib_meta": contrib_meta,
         }
 
     # Retrieve cached result
@@ -398,6 +455,8 @@ if analyze_btn or "last_result" in st.session_state:
     overlay    = res["overlay"]
     saliency   = res.get("saliency", None)
     shap_vals  = res["shap_vals"]
+    contrib_img  = res.get("contrib_img", None)
+    contrib_meta = res.get("contrib_meta", None)
 
     # ── LAYOUT ────────────────────────────────────────────────────────────────
     col1, col2 = st.columns([1, 1], gap="large")
@@ -423,6 +482,11 @@ if analyze_btn or "last_result" in st.session_state:
             fig = render_shap_plot(shap_vals, age)
             st.pyplot(fig)
             plt.close(fig)
+            # PROB
+        if contrib_img is not None:
+            fig2 = render_contrib_plot(contrib_img, contrib_meta)
+            st.pyplot(fig2)
+            plt.close(fig2)
 
     # RIGHT — results
     with col2:
