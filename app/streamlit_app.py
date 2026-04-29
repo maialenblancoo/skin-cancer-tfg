@@ -386,8 +386,11 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     orig_img_rl = RLImage(buf0, width=orig_w, height=orig_h)
     cap_orig    = Paragraph("Original", ParagraphStyle("cap", fontSize=7,
                              textColor=colors.grey, alignment=1, spaceAfter=4))
-    orig_tbl    = Table([[orig_img_rl], [cap_orig]], colWidths=[orig_w])
-    orig_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "LEFT")]))
+    orig_tbl = Table([[orig_img_rl], [cap_orig]], colWidths=[INNER], hAlign="LEFT")
+    orig_tbl.setStyle(TableStyle([
+        ("ALIGN",  (0,0), (-1,-1), "LEFT"),
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+    ]))
     story.append(orig_tbl)
 
     # Row 2: color constancy + gradcam + smoothgrad
