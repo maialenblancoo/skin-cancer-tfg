@@ -675,17 +675,22 @@ if not uploaded_file:
 # Load image
 # Load image — resize a 224×224 antes de color constancy
 # Grad-CAM & SmoothGrad always compatibles
+import hashlib
+
 pil_img  = Image.open(uploaded_file).convert("RGB")
 pil_224  = pil_img.resize((224, 224), Image.LANCZOS)
 img_cc   = color_constancy(np.array(pil_224))
 pil_cc   = Image.fromarray(img_cc)
 meta_t   = build_metadata_vector(age, location)
 
-# Limpiar resultado si cambia la imagen o los metadatos
-current_inputs = (uploaded_file.name if uploaded_file else None, age, location)
-if "last_inputs" not in st.session_state or st.session_state["last_inputs"] != current_inputs:
+# Cache key: hash de los bytes de la imagen + edad + localización
+img_bytes   = uploaded_file.getvalue()
+img_hash    = hashlib.md5(img_bytes).hexdigest()
+cache_key   = f"{img_hash}_{age}_{location}"
+
+if st.session_state.get("last_cache_key") != cache_key:
     st.session_state.pop("last_result", None)
-    st.session_state["last_inputs"] = current_inputs
+    st.session_state["last_cache_key"] = cache_key
 
 if analyze_btn or "last_result" in st.session_state:
 
