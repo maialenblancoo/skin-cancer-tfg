@@ -698,32 +698,35 @@ if analyze_btn or "last_result" in st.session_state:
         # Load model
         model, device = load_model()
 
-        with st.spinner("Running TTA inference (6 transforms)…"):
-            probs = predict_tta(model, device, pil_cc, meta_t)
-
+        progress = st.progress(0, text="Step 1/4 — Running TTA inference…")
+        probs = predict_tta(model, device, pil_cc, meta_t)
         pred_idx, pred_name, confidence = apply_threshold(probs)
 
+        progress.progress(25, text="Step 2/4 — Preprocessing image…")
         img_t = T.Compose([
             T.Resize((224, 224)),
             T.ToTensor(),
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ])(pil_cc).unsqueeze(0).to(device)
 
-        with st.spinner("Computing Grad-CAM..."):
-            heatmap_gc = run_gradcam(model, img_t, meta_t.to(device), pred_idx)
-            overlay    = overlay_heatmap(img_cc, heatmap_gc)
+        progress.progress(50, text="Step 3/4 — Computing Grad-CAM…")
+        heatmap_gc = run_gradcam(model, img_t, meta_t.to(device), pred_idx)
+        overlay    = overlay_heatmap(img_cc, heatmap_gc)
 
-        with st.spinner("Computing SmoothGrad (25 samples)..."):
-            heatmap_sg = run_smoothgrad(model, img_t, meta_t.to(device), pred_idx)
-            import cv2
-            saliency = overlay_heatmap(img_cc, heatmap_sg, colormap=cv2.COLORMAP_HOT)
+        progress.progress(75, text="Step 4/4 — Computing SmoothGrad…")
+        heatmap_sg = run_smoothgrad(model, img_t, meta_t.to(device), pred_idx)
+        saliency   = overlay_heatmap(img_cc, heatmap_sg, colormap=cv2.COLORMAP_HOT)
+
+        progress.progress(100, text="Analysis complete ✓")
+        progress.empty()
 
         contrib_img  = None
         contrib_meta = None
         shap_all_zero = True
         shap_vals = None
         if run_shap:
-            with st.spinner("Computing SHAP values (~30 s)..."):
+            progress_shap = st.progress(0, text="Computing SHAP values (~30 s)…")
+            with st.spinner(""):
                 # Background uniforme: una muestra por localización con edad media
                 # Garantiza contraste SHAP para cualquier localización de entrada
                 background = np.zeros((15, METADATA_DIM), dtype=np.float32)
@@ -739,6 +742,8 @@ if analyze_btn or "last_result" in st.session_state:
                 contrib_img, contrib_meta, _ = compute_image_vs_metadata_contrib(
                     model, device, img_t, meta_t, background
                 )
+                progress_shap.progress(100, text="SHAP complete ✓")
+                progress_shap.empty()
 
         st.session_state["last_result"] = {
             "probs": probs, "pred_idx": pred_idx,
