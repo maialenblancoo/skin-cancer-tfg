@@ -886,6 +886,53 @@ if analyze_btn or "last_result" in st.session_state:
         st.markdown(f"- **Age:** {age} years  \n"
                     f"- **Anatomical location:** {location}")
 
+        # ABCDE checklist
+        ABCDE = {
+            "akiec": {"A": "⚠️", "B": "⚠️", "C": "⚠️", "D": "—", "E": "⚠️"},
+            "bcc":   {"A": "⚠️", "B": "✅", "C": "⚠️", "D": "⚠️", "E": "⚠️"},
+            "bkl":   {"A": "—",  "B": "—",  "C": "⚠️", "D": "—",  "E": "—"},
+            "df":    {"A": "—",  "B": "—",  "C": "—",  "D": "—",  "E": "—"},
+            "mel":   {"A": "✅", "B": "✅", "C": "✅", "D": "✅", "E": "✅"},
+            "nv":    {"A": "—",  "B": "—",  "C": "—",  "D": "—",  "E": "—"},
+            "vasc":  {"A": "—",  "B": "—",  "C": "✅", "D": "—",  "E": "—"},
+        }
+        ABCDE_DESC = {
+            "A": ("Asymmetry",  "One half doesn't match the other"),
+            "B": ("Border",     "Irregular, ragged or blurred edges"),
+            "C": ("Color",      "Variation in color within the lesion"),
+            "D": ("Diameter",   "Larger than 6 mm (pencil eraser)"),
+            "E": ("Evolution",  "Changes in size, shape or color over time"),
+        }
+        ABCDE_LEGEND = {
+            "✅": ("✅", "#fff5f5", "#feb2b2"),   # typical — red tint
+            "⚠️": ("⚠️", "#fffbeb", "#f6e05e"),  # possible — yellow tint
+            "—":  ("—",  "#f7fafc", "#e2e8f0"),   # not typical — grey
+        }
+
+        st.markdown('<p class="section-title">ABCDE clinical criteria</p>',
+                    unsafe_allow_html=True)
+
+        criteria = ABCDE[pred_name]
+        for letter, (name, desc) in ABCDE_DESC.items():
+            val = criteria[letter]
+            _, bg, border = ABCDE_LEGEND[val]
+            st.markdown(
+                f'<div style="background:{bg}; border-left: 4px solid {border}; '
+                f'border-radius:6px; padding:7px 12px; margin-bottom:6px;">'
+                f'<span style="font-weight:700; font-size:13px;">{letter} — {name}</span> '
+                f'<span style="font-size:12px; color:#718096;">({desc})</span>'
+                f'<span style="float:right; font-size:15px;">{val}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown(
+            '<p style="font-size:10px; color:#a0aec0; margin-top:4px;">'
+            'ABCDE criteria shown are class-level clinical reference, '
+            'not image-specific analysis.</p>',
+            unsafe_allow_html=True,
+        )
+
         # PDF download button
         # PDF download button
         if "last_result" in st.session_state:
