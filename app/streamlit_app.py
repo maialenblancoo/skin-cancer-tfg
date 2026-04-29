@@ -482,15 +482,15 @@ if analyze_btn or "last_result" in st.session_state:
             st.markdown('<p class="section-title">Metadata influence (SHAP)</p>',
                         unsafe_allow_html=True)
 
-            if contrib_img is not None and contrib_meta < 0.01:
-                # Nota informativa encima del gráfico Image vs Metadata
+            shap_all_zero = np.all(np.abs(shap_vals) < 1e-6)
+
+            if shap_all_zero:
                 st.info(
                     "📷 **Image-driven prediction.** "
                     "Clinical metadata did not modify the result. "
                     "The lesion presents sufficiently distinctive visual characteristics."
                 )
             else:
-                # Mostrar SHAP plot solo si metadatos aportan algo
                 fig = render_shap_plot(shap_vals, age, location)
                 st.pyplot(fig)
                 plt.close(fig)
@@ -500,7 +500,7 @@ if analyze_btn or "last_result" in st.session_state:
             st.pyplot(fig2)
             plt.close(fig2)
 
-            if contrib_meta >= 0.01:
+            if not shap_all_zero:
                 ratio = contrib_img / (contrib_meta + 1e-8)
                 if confidence >= UNCERTAINTY_THR:
                     st.info(
