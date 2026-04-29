@@ -186,10 +186,9 @@ def render_probability_bar(class_name: str, label: str,
     """, unsafe_allow_html=True)
 
 
-def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
+def render_shap_plot(shap_vals: np.ndarray, age: float, location: str) -> plt.Figure:
     """Horizontal bar chart for SHAP metadata values."""
-    #meta_np = meta_tensor.numpy()[0]
-    indices = np.argsort(np.abs(shap_vals))[::-1][:10]   # top 10
+    indices = np.argsort(np.abs(shap_vals))[::-1][:10]
 
     features = []
     values   = []
@@ -203,12 +202,13 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
     features = features[::-1]
     values   = values[::-1]
     colors   = ["#e53e3e" if v > 0 else "#3182ce" for v in values]
-    
+
     fig, ax = plt.subplots(figsize=(7, 4))
-    bars = ax.barh(features, values, color=colors, height=0.6)
+    ax.barh(features, values, color=colors, height=0.6)
     ax.axvline(0, color="#4a5568", linewidth=0.8)
     ax.set_xlabel("SHAP value", fontsize=10)
     ax.set_title("Metadata contribution (SHAP)", fontsize=11, fontweight="bold")
+    ax.tick_params(axis="y", labelsize=9)
     ax.tick_params(axis="x", labelsize=9)
     for ticklabel, feature in zip(ax.get_yticklabels(), features):
         fname = feature.replace(f" ({age:.0f} yrs)", "")
@@ -216,13 +216,6 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
         if is_active:
             ticklabel.set_fontweight("bold")
             ticklabel.set_bbox(dict(facecolor="#fefcbf", edgecolor="none", pad=2))
-        ticklabel.set_fontsize(9)
-    
-    ax.axvline(0, color="#4a5568", linewidth=0.8)
-    ax.set_xlabel("SHAP value", fontsize=10)
-    ax.set_title("Metadata contribution (SHAP)", fontsize=11, fontweight="bold")
-    ax.tick_params(axis="y", labelsize=9)
-    ax.tick_params(axis="x", labelsize=9)
     fig.tight_layout()
     return fig
 
@@ -488,35 +481,39 @@ if analyze_btn or "last_result" in st.session_state:
         if shap_vals is not None:
             st.markdown('<p class="section-title">Metadata influence (SHAP)</p>',
                         unsafe_allow_html=True)
-            fig = render_shap_plot(shap_vals, age)
-            st.pyplot(fig)
-            plt.close(fig)
-            # PROB
+
+            if contrib_img is not None and contrib_meta < 0.01:
+                # Nota informativa encima del gráfico Image vs Metadata
+                st.info(
+                    "📷 **Image-driven prediction.** "
+                    "Clinical metadata did not modify the result. "
+                    "The lesion presents sufficiently distinctive visual characteristics."
+                )
+            else:
+                # Mostrar SHAP plot solo si metadatos aportan algo
+                fig = render_shap_plot(shap_vals, age, location)
+                st.pyplot(fig)
+                plt.close(fig)
+
         if contrib_img is not None:
             fig2 = render_contrib_plot(contrib_img, contrib_meta)
             st.pyplot(fig2)
             plt.close(fig2)
 
-            # Contextual note based on image/metadata ratio
-            ratio = contrib_img / (contrib_meta + 1e-8)
-            if contrib_meta < 0.01:
-                st.info(
-                    "**Image-driven prediction.** "
-                    "Clinical metadata did not modify the result. "
-                    "The lesion presents sufficiently distinctive visual characteristics."
-                )
-            elif confidence >= UNCERTAINTY_THR:
-                st.info(
-                    f"**Clinical metadata contributed to this prediction** "
-                    f"(image/metadata ratio: {ratio:.0f}×). "
-                    f"Age and/or anatomical location influenced the result alongside the image."
-                )
-            else:
-                st.warning(
-                    "⚠️ **Ambiguous image with clinical metadata influence.** "
-                    "The model is relying on age and location to reach a decision. "
-                    "This case requires review by a dermatology specialist."
-                )
+            if contrib_meta >= 0.01:
+                ratio = contrib_img / (contrib_meta + 1e-8)
+                if confidence >= UNCERTAINTY_THR:
+                    st.info(
+                        f"🧬 **Clinical metadata contributed to this prediction** "
+                        f"(image/metadata ratio: {ratio:.0f}×). "
+                        f"Age and/or anatomical location influenced the result alongside the image."
+                    )
+                else:
+                    st.warning(
+                        "⚠️ **Ambiguous image with clinical metadata influence.** "
+                        "The model is relying on age and location to reach a decision. "
+                        "This case requires review by a dermatology specialist."
+                    )
 
     # RIGHT — results
     with col2:
