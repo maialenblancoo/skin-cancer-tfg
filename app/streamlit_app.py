@@ -310,7 +310,7 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
 
     # ── Styles ────────────────────────────────────────────────────────────────
     title_style = ParagraphStyle("title", fontSize=18, fontName="Helvetica-Bold",
-                                  spaceAfter=2)
+                                  spaceAfter=10)
     sub_style   = ParagraphStyle("sub",   fontSize=8,  textColor=colors.grey,
                                   spaceAfter=14)
     h2_style    = ParagraphStyle("h2",    fontSize=12, fontName="Helvetica-Bold",
@@ -375,11 +375,18 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     # ── Visual explanations ───────────────────────────────────────────────────
     story.append(Paragraph("Visual Explanations", h2_style))
 
-    # Row 1: original full width
-    orig_w = INNER
-    orig_h = orig_w * pil_img.height / pil_img.width
-    buf0   = io.BytesIO(); pil_img.save(buf0, format="PNG"); buf0.seek(0)
-    story.append(RLImage(buf0, width=orig_w, height=min(orig_h, 7*cm)))
+    # Row 1: original at real aspect ratio, max 7cm tall, centered
+    MAX_IMG_H = 7 * cm
+    aspect    = pil_img.width / pil_img.height
+    orig_h    = MAX_IMG_H
+    orig_w    = min(orig_h * aspect, INNER)
+    if orig_w == INNER:
+        orig_h = INNER / aspect
+    buf0 = io.BytesIO(); pil_img.save(buf0, format="PNG"); buf0.seek(0)
+    orig_img_rl = RLImage(buf0, width=orig_w, height=orig_h)
+    orig_tbl    = Table([[orig_img_rl]], colWidths=[INNER])
+    orig_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "CENTER")]))
+    story.append(orig_tbl)
     story.append(Paragraph("Original", ParagraphStyle("cap", fontSize=7,
                              textColor=colors.grey, alignment=1, spaceAfter=4)))
 
@@ -393,7 +400,11 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
         row2_caps.append("SmoothGrad")
 
     img_tbl = Table([row2_imgs], colWidths=[cell_w]*len(row2_imgs))
-    img_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "CENTER")]))
+    img_tbl.setStyle(TableStyle([
+        ("ALIGN",        (0,0), (-1,-1), "CENTER"),
+        ("LEFTPADDING",  (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+    ]))
     story.append(img_tbl)
 
     cap_tbl = Table([row2_caps], colWidths=[cell_w]*len(row2_caps))
@@ -405,6 +416,8 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     story.append(cap_tbl)
 
     # ── Class probabilities ───────────────────────────────────────────────────
+    from reportlab.platypus import PageBreak
+    story.append(PageBreak())
     story.append(Paragraph("Class Probabilities", h2_style))
     sorted_idx = np.argsort(probs)[::-1]
     prob_data  = [["Class", "Probability"]]
