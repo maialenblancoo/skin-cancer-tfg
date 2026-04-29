@@ -304,7 +304,10 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
 
     doc = SimpleDocTemplate(buffer, pagesize=A4,
                             rightMargin=MARGIN, leftMargin=MARGIN,
-                            topMargin=MARGIN, bottomMargin=MARGIN)
+                            topMargin=MARGIN, bottomMargin=MARGIN,
+                            title="Skin Lesion Classification Report",
+                            author="Maialen Blanco Ibarra — Universidad de Deusto",
+                            subject="Multimodal skin lesion analysis · HAM10000")
     styles = getSampleStyleSheet()
     story  = []
 
