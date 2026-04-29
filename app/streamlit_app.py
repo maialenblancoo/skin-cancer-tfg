@@ -487,13 +487,13 @@ if analyze_btn or "last_result" in st.session_state:
             ratio = contrib_img / (contrib_meta + 1e-8)
             if contrib_meta < 0.01:
                 st.info(
-                    "📷 **Image-driven prediction.** "
+                    "**Image-driven prediction.** "
                     "Clinical metadata did not modify the result — "
                     "the lesion presents sufficiently distinctive visual characteristics."
                 )
             elif confidence >= UNCERTAINTY_THR:
                 st.info(
-                    f"🧬 **Clinical metadata contributed to this prediction** "
+                    f"**Clinical metadata contributed to this prediction** "
                     f"(image/metadata ratio: {ratio:.0f}×). "
                     f"Age and/or anatomical location influenced the result alongside the image."
                 )
