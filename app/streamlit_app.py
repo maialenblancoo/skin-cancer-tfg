@@ -385,18 +385,19 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     buf0 = io.BytesIO(); pil_img.save(buf0, format="PNG"); buf0.seek(0)
     orig_img_rl = RLImage(buf0, width=orig_w, height=orig_h)
     orig_tbl    = Table([[orig_img_rl]], colWidths=[INNER])
-    orig_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "CENTER")]))
+    orig_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "LEFT")]))
     story.append(orig_tbl)
     story.append(Paragraph("Original", ParagraphStyle("cap", fontSize=7,
                              textColor=colors.grey, alignment=1, spaceAfter=4)))
 
     # Row 2: color constancy + gradcam + smoothgrad
-    cell_w = INNER / 3
-    row2_imgs = [pil_to_rl(pil_cc, cell_w/cm),
-                 pil_to_rl(overlay, cell_w/cm)]
+    cell_w    = INNER / 3
+    img_w_cm  = (cell_w - 10) / cm   # 5pt gap each side
+    row2_imgs = [pil_to_rl(pil_cc, img_w_cm),
+                 pil_to_rl(overlay, img_w_cm)]
     row2_caps = ["Color Constancy", "Grad-CAM"]
     if saliency is not None:
-        row2_imgs.append(pil_to_rl(saliency, cell_w/cm))
+        row2_imgs.append(pil_to_rl(saliency, img_w_cm))
         row2_caps.append("SmoothGrad")
 
     img_tbl = Table([row2_imgs], colWidths=[cell_w]*len(row2_imgs))
