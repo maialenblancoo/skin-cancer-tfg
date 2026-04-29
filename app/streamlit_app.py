@@ -247,19 +247,21 @@ def compute_image_vs_metadata_contrib(model, device, img_t, meta_t, background):
 
 def render_contrib_plot(contrib_img, contrib_meta):
     """Bar chart imagen vs metadatos."""
-    fig, ax = plt.subplots(figsize=(4, 2.5))
+    fig, ax = plt.subplots(figsize=(6, 2.5))
     bars = ax.barh(
-        ["Image", "Metadata"],
-        [contrib_img, contrib_meta],
-        color=["#3182ce", "#e53e3e"],
+        ["Metadata", "Image"],
+        [contrib_meta, contrib_img],
+        color=["#e53e3e", "#3182ce"],
         height=0.5,
     )
-    ax.set_xlabel("Contribution to p(predicted class)", fontsize=9)
-    ax.set_title("Image vs Metadata influence", fontsize=10, fontweight="bold")
-    for bar, val in zip(bars, [contrib_img, contrib_meta]):
+    ax.set_xlabel("Contribution to p(predicted class)", fontsize=10)
+    ax.set_title("Image vs Metadata influence", fontsize=11, fontweight="bold")
+    for bar, val in zip(bars, [contrib_meta, contrib_img]):
         ax.text(val + 0.001, bar.get_y() + bar.get_height()/2,
                 f"{val:.4f}", va="center", fontsize=9)
     ax.set_xlim(0, max(contrib_img, contrib_meta) * 1.3)
+    ax.tick_params(axis="y", labelsize=9)
+    ax.tick_params(axis="x", labelsize=9)
     fig.tight_layout()
     return fig
 
