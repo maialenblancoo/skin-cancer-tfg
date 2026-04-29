@@ -417,17 +417,12 @@ if analyze_btn or "last_result" in st.session_state:
         shap_vals = None
         if run_shap:
             with st.spinner("Computing SHAP values (~30 s)..."):
-                rng = np.random.default_rng(42)
-                background = np.zeros((50, METADATA_DIM), dtype=np.float32)
-                # age: uniform distribution between 0.2 - 0.6 (18–55 años normalizados por 90)
-                background[:, 0] = rng.uniform(0.2, 0.6, 50)
-                # localizations: assign most frequent from train (back, lower extremity, trunk)
-                loc_weights = [0.04, 0.01, 0.22, 0.04, 0.01, 0.05,
-                            0.02, 0.01, 0.02, 0.21, 0.03, 0.04,
-                            0.12, 0.03, 0.11]
-                for i in range(50):
-                    loc_idx = rng.choice(15, p=loc_weights/np.array(loc_weights).sum())
-                    background[i, 1 + loc_idx] = 1.0
+                # Background uniforme: una muestra por localización con edad media
+                # Garantiza contraste SHAP para cualquier localización de entrada
+                background = np.zeros((15, METADATA_DIM), dtype=np.float32)
+                background[:, 0] = 0.45  # edad media ~40 años normalizada por 90
+                for i in range(15):
+                    background[i, 1 + i] = 1.0  # una muestra por cada localización
                 shap_vals = run_shap_metadata(
                     model, img_t, meta_t.to(device),
                     background_meta=background,
