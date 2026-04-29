@@ -203,37 +203,6 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
     features = features[::-1]
     values   = values[::-1]
     colors   = ["#e53e3e" if v > 0 else "#3182ce" for v in values]
-    '''
-    fig, ax = plt.subplots(figsize=(6, 4))
-    bars = ax.barh(features, values, color=colors, height=0.6)
-    '''
-    fig, ax = plt.subplots(figsize=(7, 4))
-    bars = ax.barh(features, values, color=colors, height=0.6)
-    ax.axvline(0, color="#4a5568", linewidth=0.8)
-    ax.set_xlabel("SHAP value", fontsize=10)
-    ax.set_title("Metadata contribution (SHAP)", fontsize=11, fontweight="bold")
-    ax.tick_params(axis="x", labelsize=9)
-    for ticklabel, feature in zip(ax.get_yticklabels(), features):
-        fname = feature.replace(f" ({age:.0f} yrs)", "")
-        is_active = (fname == f"age" or fname == f"loc: {location}")
-        if is_active:
-            ticklabel.set_color("#f6820c")
-            ticklabel.set_fontweight("bold")
-        ticklabel.set_fontsize(9)
-    '''
-    fig, ax = plt.subplots(figsize=(7, 4))
-    bars = ax.barh(features, values, color=colors, height=0.6)
-    ax.axvline(0, color="#4a5568", linewidth=0.8)
-    ax.set_xlabel("SHAP value", fontsize=10)
-    ax.set_title("Metadata contribution (SHAP)", fontsize=11, fontweight="bold")
-    ax.tick_params(axis="x", labelsize=9)
-    for ticklabel, feature in zip(ax.get_yticklabels(), features):
-        fname = feature.replace(f" ({age:.0f} yrs)", "")
-        is_active = (fname == "age" or fname == f"loc: {location}")
-        if is_active:
-            ticklabel.set_text("● " + ticklabel.get_text())
-            ticklabel.set_fontweight("bold")
-        ticklabel.set_fontsize(9)
     
     fig, ax = plt.subplots(figsize=(7, 4))
     bars = ax.barh(features, values, color=colors, height=0.6)
@@ -248,7 +217,7 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
             ticklabel.set_fontweight("bold")
             ticklabel.set_bbox(dict(facecolor="#fefcbf", edgecolor="none", pad=2))
         ticklabel.set_fontsize(9)
-    '''
+    
     ax.axvline(0, color="#4a5568", linewidth=0.8)
     ax.set_xlabel("SHAP value", fontsize=10)
     ax.set_title("Metadata contribution (SHAP)", fontsize=11, fontweight="bold")
