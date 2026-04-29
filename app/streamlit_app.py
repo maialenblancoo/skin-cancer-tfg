@@ -388,7 +388,7 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     orig_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "LEFT")]))
     story.append(orig_tbl)
     story.append(Paragraph("Original", ParagraphStyle("cap", fontSize=7,
-                             textColor=colors.grey, alignment=1, spaceAfter=4)))
+                             textColor=colors.grey, alignment="left", spaceAfter=4)))
 
     # Row 2: color constancy + gradcam + smoothgrad
     cell_w    = INNER / 3
