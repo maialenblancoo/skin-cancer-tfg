@@ -247,7 +247,7 @@ def compute_image_vs_metadata_contrib(model, device, img_t, meta_t, background):
 
 def render_contrib_plot(contrib_img, contrib_meta):
     """Bar chart imagen vs metadatos."""
-    fig, ax = plt.subplots(figsize=(6, 2.5))
+    fig, ax = plt.subplots(figsize=(7, 2.5))
     bars = ax.barh(
         ["Metadata", "Image"],
         [contrib_meta, contrib_img],
