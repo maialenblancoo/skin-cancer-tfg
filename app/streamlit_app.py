@@ -783,7 +783,7 @@ if analyze_btn or "last_result" in st.session_state:
         with sal_col:
             if saliency is not None:
                 st.image(saliency, caption="SmoothGrad", use_container_width=True)
-        with st.expander("ℹ What do these visualizations mean?"):
+        with st.expander("(ℹ) What do these visualizations mean?"):
             st.markdown("""
 **Grad-CAM** — The heatmap shows which regions of the image most influenced 
 the model's decision. Red areas were the most important, blue areas were ignored.
