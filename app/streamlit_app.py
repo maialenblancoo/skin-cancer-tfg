@@ -71,6 +71,18 @@ HIGH_RISK_UNDERREPRESENTED = {
     "neck": 16.7,
 }
 
+CLASS_DESCRIPTIONS = {
+    "mel":   "Malignant. Urgent referral needed.",
+    "bcc":   "Malignant. Requires treatment.",
+    "akiec": "Precancerous. Monitor closely.",
+    "bkl":   "Benign skin growth.",
+    "nv":    "Benign mole.",
+    "df":    "Benign nodule.",
+    "vasc":  "Benign vascular lesion.",
+}
+
+HIGH_RISK_CLASSES = {"mel", "bcc", "akiec"}
+
 # ══════════════════════════════════════════════════════════════════════════════
 # MODEL LOADING
 # ══════════════════════════════════════════════════════════════════════════════
@@ -318,6 +330,10 @@ st.markdown("""
     font-size: 11px; color: #a0aec0;
     margin-top: 24px; text-align: center;
   }
+            
+  .result-warning {
+    background: #fffaf0; border: 2px solid #f6ad55;
+  }
 </style>
 """, unsafe_allow_html=True)
 
@@ -518,15 +534,18 @@ if analyze_btn or "last_result" in st.session_state:
 
     # RIGHT — results
     with col2:
-        is_mel  = pred_idx == MEL_IDX
-        box_cls = "result-mel" if is_mel else "result-ok"
-        icon    = "🔴" if is_mel else "🟢"
+        is_mel      = pred_idx == MEL_IDX
+        is_high     = pred_name in HIGH_RISK_CLASSES
+        box_cls     = "result-mel" if is_mel else ("result-warning" if is_high else "result-ok")
+        icon        = "🔴" if is_mel else ("🟠" if is_high else "🟢")
 
         st.markdown(
             f'<div class="result-box {box_cls}">'
             f'<div style="font-size:1.5rem; font-weight:800;">'
             f'{icon} {CLASS_LABELS[pred_name]}</div>'
-            f'<div style="font-size:0.9rem; color:#4a5568; margin-top:4px;">'
+            f'<div style="font-size:0.9rem; color:#718096; margin-top:2px;">'
+            f'{CLASS_DESCRIPTIONS[pred_name]}</div>'
+            f'<div style="font-size:0.9rem; color:#4a5568; margin-top:6px;">'
             f'Confidence: <b>{confidence:.1%}</b> &nbsp;|&nbsp; '
             f'Melanoma probability: <b>{probs[MEL_IDX]:.1%}</b> '
             f'(threshold: {MEL_THRESHOLD})'
