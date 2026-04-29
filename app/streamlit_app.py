@@ -901,7 +901,7 @@ if analyze_btn or "last_result" in st.session_state:
             "B": ("Border",     "Irregular, ragged or blurred edges"),
             "C": ("Color",      "Variation in color within the lesion"),
             "D": ("Diameter",   "Larger than 6 mm (pencil eraser)"),
-            "E": ("Evolution",  "Changes in size, shape or color over time"),
+            "E": ("Evolution",  "Size, shape or color changes over time"),
         }
         ABCDE_LEGEND = {
             "✅": ("✅", "#fff5f5", "#feb2b2"),   # typical — red tint
