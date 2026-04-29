@@ -282,6 +282,153 @@ def render_contrib_plot(contrib_img, contrib_meta):
     fig.tight_layout()
     return fig
 
+def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
+                         probs, pred_name, confidence,
+                         age, location, shap_vals, 
+                         contrib_img, contrib_meta):
+    """Generate a PDF report with prediction results and XAI visualizations."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle
+    from reportlab.lib.units import cm
+    import io
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                            rightMargin=2*cm, leftMargin=2*cm,
+                            topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # ── Title
+    title_style = ParagraphStyle("title", fontSize=18, fontName="Helvetica-Bold",
+                                  spaceAfter=4)
+    sub_style   = ParagraphStyle("sub", fontSize=9, textColor=colors.grey,
+                                  spaceAfter=16)
+    story.append(Paragraph("Skin Lesion Classification Report", title_style))
+    story.append(Paragraph(
+        "EfficientNet-B0 + Color Constancy + clinical metadata · HAM10000 · "
+        "Universidad de Deusto 2026", sub_style))
+
+    # ── Prediction result
+    from datetime import datetime
+    pred_color = colors.HexColor("#e53e3e") if pred_name == "mel" else (
+                 colors.HexColor("#ed8936") if pred_name in {"bcc","akiec"} else
+                 colors.HexColor("#38a169"))
+
+    result_data = [
+        ["Prediction", CLASS_LABELS[pred_name]],
+        ["Description", CLASS_DESCRIPTIONS[pred_name]],
+        ["Confidence", f"{confidence:.1%}"],
+        ["Melanoma probability", f"{probs[MEL_IDX]:.1%}"],
+        ["Melanoma threshold", str(MEL_THRESHOLD)],
+        ["Patient age", f"{age} years"],
+        ["Anatomical location", location],
+        ["Analysis date", datetime.now().strftime("%Y-%m-%d %H:%M")],
+    ]
+    t = Table(result_data, colWidths=[5*cm, 11*cm])
+    t.setStyle(TableStyle([
+        ("FONTNAME",    (0,0), (-1,-1), "Helvetica"),
+        ("FONTNAME",    (0,0), (0,-1),  "Helvetica-Bold"),
+        ("FONTSIZE",    (0,0), (-1,-1), 9),
+        ("BACKGROUND",  (0,0), (-1,0),  pred_color),
+        ("TEXTCOLOR",   (0,0), (-1,0),  colors.white),
+        ("FONTNAME",    (0,0), (-1,0),  "Helvetica-Bold"),
+        ("FONTSIZE",    (0,0), (-1,0),  11),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.whitesmoke, colors.white]),
+        ("GRID",        (0,0), (-1,-1), 0.5, colors.lightgrey),
+        ("TOPPADDING",  (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING",(0,0),(-1,-1), 5),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 0.5*cm))
+
+    # ── Images — helper to convert PIL/np to ReportLab Image
+    def pil_to_rl(img, width_cm=7):
+        buf = io.BytesIO()
+        if isinstance(img, np.ndarray):
+            img = Image.fromarray(img)
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        return RLImage(buf, width=width_cm*cm,
+                       height=width_cm*cm * img.height / img.width)
+
+    story.append(Paragraph("Visual Explanations", styles["Heading2"]))
+    img_row = [[pil_to_rl(pil_img, 5), pil_to_rl(pil_cc, 5), pil_to_rl(overlay, 5)]]
+    if saliency is not None:
+        img_row[0].append(pil_to_rl(saliency, 5))
+    captions = [["Original", "Color Constancy", "Grad-CAM",
+                  "SmoothGrad" if saliency is not None else ""]]
+
+    img_table = Table(img_row)
+    img_table.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "CENTER")]))
+    story.append(img_table)
+
+    cap_table = Table(captions, colWidths=[5*cm]*len(img_row[0]))
+    cap_table.setStyle(TableStyle([
+        ("ALIGN",    (0,0), (-1,-1), "CENTER"),
+        ("FONTSIZE", (0,0), (-1,-1), 8),
+        ("TEXTCOLOR",(0,0), (-1,-1), colors.grey),
+    ]))
+    story.append(cap_table)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Class probabilities table
+    story.append(Paragraph("Class Probabilities", styles["Heading2"]))
+    sorted_idx = np.argsort(probs)[::-1]
+    prob_data = [["Class", "Probability"]]
+    for i in sorted_idx:
+        prob_data.append([CLASS_LABELS[CLASS_NAMES[i]], f"{probs[i]:.1%}"])
+    pt = Table(prob_data, colWidths=[8*cm, 8*cm])
+    pt.setStyle(TableStyle([
+        ("FONTNAME",    (0,0), (-1,0),  "Helvetica-Bold"),
+        ("BACKGROUND",  (0,0), (-1,0),  colors.HexColor("#2d3748")),
+        ("TEXTCOLOR",   (0,0), (-1,0),  colors.white),
+        ("FONTSIZE",    (0,0), (-1,-1), 9),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.whitesmoke, colors.white]),
+        ("GRID",        (0,0), (-1,-1), 0.5, colors.lightgrey),
+        ("TOPPADDING",  (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING",(0,0),(-1,-1), 4),
+    ]))
+    story.append(pt)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Image vs Metadata contrib
+    if contrib_img is not None:
+        story.append(Paragraph("Image vs Metadata Influence", styles["Heading2"]))
+        ratio = contrib_img / (contrib_meta + 1e-8)
+        contrib_data = [
+            ["Image contribution",    f"{contrib_img:.4f}"],
+            ["Metadata contribution", f"{contrib_meta:.4f}"],
+            ["Image/Metadata ratio",  f"{ratio:.0f}×"],
+        ]
+        ct = Table(contrib_data, colWidths=[8*cm, 8*cm])
+        ct.setStyle(TableStyle([
+            ("FONTNAME",    (0,0), (0,-1),  "Helvetica-Bold"),
+            ("FONTSIZE",    (0,0), (-1,-1), 9),
+            ("ROWBACKGROUNDS", (0,0), (-1,-1), [colors.whitesmoke, colors.white]),
+            ("GRID",        (0,0), (-1,-1), 0.5, colors.lightgrey),
+            ("TOPPADDING",  (0,0), (-1,-1), 4),
+            ("BOTTOMPADDING",(0,0),(-1,-1), 4),
+        ]))
+        story.append(ct)
+        story.append(Spacer(1, 0.3*cm))
+
+    # ── Disclaimer
+    disc_style = ParagraphStyle("disc", fontSize=7, textColor=colors.grey,
+                                 borderPad=4)
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph(
+        "This report is intended for research and educational purposes only. "
+        "It does not constitute a medical diagnosis. "
+        "Always consult a qualified dermatologist for clinical decisions.",
+        disc_style))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -381,7 +528,7 @@ with st.sidebar:
              "Disable for faster inference.",
     )
 
-    analyze_btn = st.button("🔍 Analyze", use_container_width=True, type="primary")
+    analyze_btn = st.button("Analyze", use_container_width=True, type="primary")
 
     st.divider()
     with st.expander("About the model"):
@@ -539,19 +686,22 @@ if analyze_btn or "last_result" in st.session_state:
 
             if ratio > 50:
                 st.info(
-                    "📷 **Image-driven prediction.** "
+                    "**Image-driven prediction.** "
+                    ""
                     "Clinical metadata had negligible influence on the result. "
                     "The lesion presents sufficiently distinctive visual characteristics."
                 )
             elif ratio > 10:
                 st.info(
-                    f"🧬 **Clinical metadata contributed to this prediction** "
+                    f"**Clinical metadata contributed to this prediction** "
+                    f""
                     f"(image/metadata ratio: {ratio:.0f}×). "
                     f"Age and/or anatomical location influenced the result alongside the image."
                 )
             else:
                 st.warning(
-                    "⚠️ **Ambiguous image with strong clinical metadata influence.** "
+                    "**Ambiguous image with strong clinical metadata influence.** "
+                    ""
                     "The model is relying heavily on age and location to reach a decision. "
                     "This case requires review by a dermatology specialist."
                 )
@@ -617,6 +767,22 @@ if analyze_btn or "last_result" in st.session_state:
                     unsafe_allow_html=True)
         st.markdown(f"- **Age:** {age} years  \n"
                     f"- **Anatomical location:** {location}")
+
+        # PDF download button
+        if "last_result" in st.session_state:
+            pdf_bytes = generate_report_pdf(
+                pil_img, pil_cc, overlay, saliency,
+                probs, pred_name, confidence,
+                age, location, shap_vals,
+                contrib_img, contrib_meta
+            )
+            st.download_button(
+                label="📄 Download PDF Report",
+                data=pdf_bytes,
+                file_name=f"skin_lesion_report_{pred_name}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
 
     st.markdown(
         '<p class="disclaimer">'
