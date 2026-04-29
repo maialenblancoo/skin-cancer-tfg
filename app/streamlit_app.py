@@ -912,7 +912,7 @@ predicted class. **Red bars** increase the probability, **blue bars** decrease i
                 contrib_img, contrib_meta, shap_all_zero
             )
             st.download_button(
-                label="📄 Download PDF Report",
+                label="⤓ Download PDF Report",
                 data=pdf_bytes,
                 file_name=f"skin_lesion_report_{pred_name}.pdf",
                 mime="application/pdf",
