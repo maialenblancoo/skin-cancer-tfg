@@ -487,19 +487,19 @@ if analyze_btn or "last_result" in st.session_state:
             ratio = contrib_img / (contrib_meta + 1e-8)
             if contrib_meta < 0.01:
                 st.info(
-                    "**Image-driven prediction.** "
-                    "Clinical metadata did not modify the result — "
-                    "the lesion presents sufficiently distinctive visual characteristics."
+                    "**Image-driven prediction.** \n"
+                    "Clinical metadata did not modify the result. "
+                    "The lesion presents sufficiently distinctive visual characteristics."
                 )
             elif confidence >= UNCERTAINTY_THR:
                 st.info(
-                    f"**Clinical metadata contributed to this prediction** "
+                    f"**Clinical metadata contributed to this prediction** \n"
                     f"(image/metadata ratio: {ratio:.0f}×). "
                     f"Age and/or anatomical location influenced the result alongside the image."
                 )
             else:
                 st.warning(
-                    "⚠️ **Ambiguous image with clinical metadata influence.** "
+                    "⚠️ **Ambiguous image with clinical metadata influence.** \n"
                     "The model is relying on age and location to reach a decision. "
                     "This case requires review by a dermatology specialist."
                 )
