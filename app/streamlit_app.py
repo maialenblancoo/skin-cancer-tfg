@@ -421,6 +421,7 @@ if analyze_btn or "last_result" in st.session_state:
 
         contrib_img  = None
         contrib_meta = None
+        shap_all_zero = True
         shap_vals = None
         if run_shap:
             with st.spinner("Computing SHAP values (~30 s)..."):
@@ -484,36 +485,36 @@ if analyze_btn or "last_result" in st.session_state:
 
             shap_all_zero = np.all(np.abs(shap_vals) < 1e-6)
 
-            if shap_all_zero:
-                st.info(
-                    "📷 **Image-driven prediction.** "
-                    "Clinical metadata did not modify the result. "
-                    "The lesion presents sufficiently distinctive visual characteristics."
-                )
-            else:
+            if not shap_all_zero:
                 fig = render_shap_plot(shap_vals, age, location)
                 st.pyplot(fig)
                 plt.close(fig)
 
         if contrib_img is not None:
+            ratio = contrib_img / (contrib_meta + 1e-8)
+
             fig2 = render_contrib_plot(contrib_img, contrib_meta)
             st.pyplot(fig2)
             plt.close(fig2)
 
-            if not shap_all_zero:
-                ratio = contrib_img / (contrib_meta + 1e-8)
-                if confidence >= UNCERTAINTY_THR:
-                    st.info(
-                        f"🧬 **Clinical metadata contributed to this prediction** "
-                        f"(image/metadata ratio: {ratio:.0f}×). "
-                        f"Age and/or anatomical location influenced the result alongside the image."
-                    )
-                else:
-                    st.warning(
-                        "⚠️ **Ambiguous image with clinical metadata influence.** "
-                        "The model is relying on age and location to reach a decision. "
-                        "This case requires review by a dermatology specialist."
-                    )
+            if ratio > 50:
+                st.info(
+                    "📷 **Image-driven prediction.** "
+                    "Clinical metadata had negligible influence on the result. "
+                    "The lesion presents sufficiently distinctive visual characteristics."
+                )
+            elif ratio > 10:
+                st.info(
+                    f"🧬 **Clinical metadata contributed to this prediction** "
+                    f"(image/metadata ratio: {ratio:.0f}×). "
+                    f"Age and/or anatomical location influenced the result alongside the image."
+                )
+            else:
+                st.warning(
+                    "⚠️ **Ambiguous image with strong clinical metadata influence.** "
+                    "The model is relying heavily on age and location to reach a decision. "
+                    "This case requires review by a dermatology specialist."
+                )
 
     # RIGHT — results
     with col2:
