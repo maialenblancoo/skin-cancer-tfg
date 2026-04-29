@@ -409,6 +409,12 @@ img_cc   = color_constancy(np.array(pil_224))
 pil_cc   = Image.fromarray(img_cc)
 meta_t   = build_metadata_vector(age, location)
 
+# Limpiar resultado si cambia la imagen o los metadatos
+current_inputs = (uploaded_file.name if uploaded_file else None, age, location)
+if "last_inputs" not in st.session_state or st.session_state["last_inputs"] != current_inputs:
+    st.session_state.pop("last_result", None)
+    st.session_state["last_inputs"] = current_inputs
+
 if analyze_btn or "last_result" in st.session_state:
 
     if analyze_btn:
