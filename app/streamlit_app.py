@@ -384,7 +384,7 @@ with st.sidebar:
     analyze_btn = st.button("🔍 Analyze", use_container_width=True, type="primary")
 
     st.divider()
-    with st.expander("ⓘ About the model"):
+    with st.expander("About the model"):
         st.markdown("""
         **Model:** E09 — EfficientNet-B0 + Color Constancy + age + location (seed 42)
         
