@@ -376,7 +376,7 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     story.append(Paragraph("Visual Explanations", h2_style))
 
     # Row 1: original at real aspect ratio, max 7cm tall, centered
-    MAX_IMG_H = 5 * cm
+    MAX_IMG_H = 6 * cm
     aspect    = pil_img.width / pil_img.height
     orig_h    = MAX_IMG_H
     orig_w    = min(orig_h * aspect, INNER)
