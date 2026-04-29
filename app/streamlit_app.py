@@ -411,12 +411,30 @@ with st.sidebar:
     analyze_btn = st.button("🔍 Analyze", use_container_width=True, type="primary")
 
     st.divider()
-    st.caption(
-        "**Model:** E09 — Color Constancy · age + location · seed 42  \n"
-        "**Inference:** TTA ×6 geometric transforms  \n"
-        "**Melanoma threshold:** 0.31 (val-selected)  \n"
-        "**Melanoma Recall:** 0.9102 · **ROC-AUC:** 0.9727"
-    )
+    with st.expander("ℹ️ About the model"):
+        st.markdown("""
+        **Model:** E09 — EfficientNet-B0 + Color Constancy + age + location (seed 42)
+        
+        **Dataset:** HAM10000 — 10,015 images, 7 classes
+        
+        | Metric | Value |
+        |--------|-------|
+        | Melanoma Recall | 0.9102 |
+        | Melanoma ROC-AUC | 0.9727 |
+        | Melanoma F1 | 0.7883 |
+        | Balanced Accuracy | 0.7519 |
+        
+        **Inference:** TTA ×6 · threshold 0.31 (val-selected)
+        
+        **XAI:** Grad-CAM + SHAP KernelExplainer
+        
+        **Limitations:**
+        - Underrepresented locations (ear, face, neck)
+        - Not validated outside HAM10000
+        
+        **Author:** Maialen Blanco Ibarra  
+        Universidad de Deusto, 2026
+        """)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
