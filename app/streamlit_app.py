@@ -799,13 +799,6 @@ versions of the image to reduce noise artefacts.
 
             shap_all_zero = np.all(np.abs(shap_vals) < 1e-6)
 
-            with st.expander("What is SHAP?"):
-                st.markdown("""
-**SHAP** (SHapley Additive exPlanations) shows how much each clinical variable 
-(age and anatomical location) pushed the prediction towards or away from the 
-predicted class. **Red bars** increase the probability, **blue bars** decrease it.
-                """)
-
             if not shap_all_zero:
                 fig = render_shap_plot(shap_vals, age, location)
                 st.pyplot(fig)
@@ -817,6 +810,13 @@ predicted class. **Red bars** increase the probability, **blue bars** decrease i
             fig2 = render_contrib_plot(contrib_img, contrib_meta)
             st.pyplot(fig2)
             plt.close(fig2)
+
+            with st.expander("What is SHAP?"):
+                st.markdown("""
+**SHAP** (SHapley Additive exPlanations) shows how much each clinical variable 
+(age and anatomical location) pushed the prediction towards or away from the 
+predicted class. **Red bars** increase the probability, **blue bars** decrease it.
+                """)
 
             if ratio > 50:
                 st.info(
