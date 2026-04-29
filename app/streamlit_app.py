@@ -19,6 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
+
 # ── Hugging Face model download ───────────────────────────────────────────────
 from huggingface_hub import hf_hub_download
 
@@ -284,141 +285,217 @@ def render_contrib_plot(contrib_img, contrib_meta):
 
 def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
                          probs, pred_name, confidence,
-                         age, location, shap_vals, 
-                         contrib_img, contrib_meta):
+                         age, location, shap_vals,
+                         contrib_img, contrib_meta, shap_all_zero):
     """Generate a PDF report with prediction results and XAI visualizations."""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle
+    from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
+                                    Image as RLImage, Table, TableStyle)
     from reportlab.lib.units import cm
+    from datetime import datetime
     import io
 
     buffer = io.BytesIO()
+    W, H   = A4
+    MARGIN = 2 * cm
+    INNER  = W - 2 * MARGIN   # usable width
+
     doc = SimpleDocTemplate(buffer, pagesize=A4,
-                            rightMargin=2*cm, leftMargin=2*cm,
-                            topMargin=2*cm, bottomMargin=2*cm)
+                            rightMargin=MARGIN, leftMargin=MARGIN,
+                            topMargin=MARGIN, bottomMargin=MARGIN)
     styles = getSampleStyleSheet()
-    story = []
+    story  = []
 
-    # ── Title
+    # ── Styles ────────────────────────────────────────────────────────────────
     title_style = ParagraphStyle("title", fontSize=18, fontName="Helvetica-Bold",
-                                  spaceAfter=4)
-    sub_style   = ParagraphStyle("sub", fontSize=9, textColor=colors.grey,
-                                  spaceAfter=16)
-    story.append(Paragraph("Skin Lesion Classification Report", title_style))
-    story.append(Paragraph(
-        "EfficientNet-B0 + Color Constancy + clinical metadata · HAM10000 · "
-        "Universidad de Deusto 2026", sub_style))
+                                  spaceAfter=2)
+    sub_style   = ParagraphStyle("sub",   fontSize=8,  textColor=colors.grey,
+                                  spaceAfter=14)
+    h2_style    = ParagraphStyle("h2",    fontSize=12, fontName="Helvetica-Bold",
+                                  spaceBefore=12, spaceAfter=6,
+                                  textColor=colors.HexColor("#2d3748"))
+    note_style  = ParagraphStyle("note",  fontSize=8,  textColor=colors.grey,
+                                  spaceAfter=6)
+    disc_style  = ParagraphStyle("disc",  fontSize=7,  textColor=colors.grey,
+                                  spaceBefore=12)
 
-    # ── Prediction result
-    from datetime import datetime
-    pred_color = colors.HexColor("#e53e3e") if pred_name == "mel" else (
-                 colors.HexColor("#ed8936") if pred_name in {"bcc","akiec"} else
-                 colors.HexColor("#38a169"))
+    # ── Header ────────────────────────────────────────────────────────────────
+    story.append(Paragraph("Skin Lesion Classification Report", title_style))
+    story.append(Spacer(1, 0.2*cm))
+    story.append(Paragraph(
+        "EfficientNet-B0 + Color Constancy + clinical metadata  "
+        "· HAM10000 · Universidad de Deusto 2026", sub_style))
+
+    # ── Prediction table ──────────────────────────────────────────────────────
+    pred_color = (colors.HexColor("#e53e3e") if pred_name == "mel" else
+                  colors.HexColor("#ed8936") if pred_name in {"bcc","akiec"} else
+                  colors.HexColor("#38a169"))
 
     result_data = [
-        ["Prediction", CLASS_LABELS[pred_name]],
-        ["Description", CLASS_DESCRIPTIONS[pred_name]],
-        ["Confidence", f"{confidence:.1%}"],
+        ["Prediction",           CLASS_LABELS[pred_name]],
+        ["Description",          CLASS_DESCRIPTIONS[pred_name]],
+        ["Confidence",           f"{confidence:.1%}"],
         ["Melanoma probability", f"{probs[MEL_IDX]:.1%}"],
-        ["Melanoma threshold", str(MEL_THRESHOLD)],
-        ["Patient age", f"{age} years"],
-        ["Anatomical location", location],
-        ["Analysis date", datetime.now().strftime("%Y-%m-%d %H:%M")],
+        ["Melanoma threshold",   str(MEL_THRESHOLD)],
+        ["Patient age",          f"{age} years"],
+        ["Anatomical location",  location],
+        ["Analysis date",        datetime.now().strftime("%Y-%m-%d %H:%M")],
     ]
-    t = Table(result_data, colWidths=[5*cm, 11*cm])
+    col_w = [5*cm, INNER - 5*cm]
+    t = Table(result_data, colWidths=col_w)
     t.setStyle(TableStyle([
-        ("FONTNAME",    (0,0), (-1,-1), "Helvetica"),
-        ("FONTNAME",    (0,0), (0,-1),  "Helvetica-Bold"),
-        ("FONTSIZE",    (0,0), (-1,-1), 9),
-        ("BACKGROUND",  (0,0), (-1,0),  pred_color),
-        ("TEXTCOLOR",   (0,0), (-1,0),  colors.white),
-        ("FONTNAME",    (0,0), (-1,0),  "Helvetica-Bold"),
-        ("FONTSIZE",    (0,0), (-1,0),  11),
+        ("FONTNAME",       (0,0), (-1,-1), "Helvetica"),
+        ("FONTNAME",       (0,0), (0,-1),  "Helvetica-Bold"),
+        ("FONTSIZE",       (0,0), (-1,-1), 9),
+        ("BACKGROUND",     (0,0), (-1,0),  pred_color),
+        ("TEXTCOLOR",      (0,0), (-1,0),  colors.white),
+        ("FONTNAME",       (0,0), (-1,0),  "Helvetica-Bold"),
+        ("FONTSIZE",       (0,0), (-1,0),  11),
         ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.whitesmoke, colors.white]),
-        ("GRID",        (0,0), (-1,-1), 0.5, colors.lightgrey),
-        ("TOPPADDING",  (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING",(0,0),(-1,-1), 5),
+        ("GRID",           (0,0), (-1,-1), 0.5, colors.lightgrey),
+        ("TOPPADDING",     (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING",  (0,0), (-1,-1), 5),
     ]))
     story.append(t)
-    story.append(Spacer(1, 0.5*cm))
 
-    # ── Images — helper to convert PIL/np to ReportLab Image
-    def pil_to_rl(img, width_cm=7):
+    # ── Helper: PIL/np → ReportLab Image clamped to max_w ────────────────────
+    def pil_to_rl(img, max_w_cm):
         buf = io.BytesIO()
         if isinstance(img, np.ndarray):
             img = Image.fromarray(img)
         img.save(buf, format="PNG")
         buf.seek(0)
-        return RLImage(buf, width=width_cm*cm,
-                       height=width_cm*cm * img.height / img.width)
+        max_w = max_w_cm * cm
+        w     = max_w
+        h     = max_w * img.height / img.width
+        return RLImage(buf, width=w, height=h)
 
-    story.append(Paragraph("Visual Explanations", styles["Heading2"]))
-    img_row = [[pil_to_rl(pil_img, 5), pil_to_rl(pil_cc, 5), pil_to_rl(overlay, 5)]]
+    # ── Visual explanations ───────────────────────────────────────────────────
+    story.append(Paragraph("Visual Explanations", h2_style))
+
+    # Row 1: original full width
+    orig_w = INNER
+    orig_h = orig_w * pil_img.height / pil_img.width
+    buf0   = io.BytesIO(); pil_img.save(buf0, format="PNG"); buf0.seek(0)
+    story.append(RLImage(buf0, width=orig_w, height=min(orig_h, 7*cm)))
+    story.append(Paragraph("Original", ParagraphStyle("cap", fontSize=7,
+                             textColor=colors.grey, alignment=1, spaceAfter=4)))
+
+    # Row 2: color constancy + gradcam + smoothgrad
+    cell_w = INNER / 3
+    row2_imgs = [pil_to_rl(pil_cc, cell_w/cm),
+                 pil_to_rl(overlay, cell_w/cm)]
+    row2_caps = ["Color Constancy", "Grad-CAM"]
     if saliency is not None:
-        img_row[0].append(pil_to_rl(saliency, 5))
-    captions = [["Original", "Color Constancy", "Grad-CAM",
-                  "SmoothGrad" if saliency is not None else ""]]
+        row2_imgs.append(pil_to_rl(saliency, cell_w/cm))
+        row2_caps.append("SmoothGrad")
 
-    img_table = Table(img_row)
-    img_table.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "CENTER")]))
-    story.append(img_table)
+    img_tbl = Table([row2_imgs], colWidths=[cell_w]*len(row2_imgs))
+    img_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "CENTER")]))
+    story.append(img_tbl)
 
-    cap_table = Table(captions, colWidths=[5*cm]*len(img_row[0]))
-    cap_table.setStyle(TableStyle([
+    cap_tbl = Table([row2_caps], colWidths=[cell_w]*len(row2_caps))
+    cap_tbl.setStyle(TableStyle([
         ("ALIGN",    (0,0), (-1,-1), "CENTER"),
-        ("FONTSIZE", (0,0), (-1,-1), 8),
+        ("FONTSIZE", (0,0), (-1,-1), 7),
         ("TEXTCOLOR",(0,0), (-1,-1), colors.grey),
     ]))
-    story.append(cap_table)
-    story.append(Spacer(1, 0.3*cm))
+    story.append(cap_tbl)
 
-    # ── Class probabilities table
-    story.append(Paragraph("Class Probabilities", styles["Heading2"]))
+    # ── Class probabilities ───────────────────────────────────────────────────
+    story.append(Paragraph("Class Probabilities", h2_style))
     sorted_idx = np.argsort(probs)[::-1]
-    prob_data = [["Class", "Probability"]]
+    prob_data  = [["Class", "Probability"]]
     for i in sorted_idx:
         prob_data.append([CLASS_LABELS[CLASS_NAMES[i]], f"{probs[i]:.1%}"])
-    pt = Table(prob_data, colWidths=[8*cm, 8*cm])
+    pt = Table(prob_data, colWidths=[INNER*0.6, INNER*0.4])
     pt.setStyle(TableStyle([
-        ("FONTNAME",    (0,0), (-1,0),  "Helvetica-Bold"),
-        ("BACKGROUND",  (0,0), (-1,0),  colors.HexColor("#2d3748")),
-        ("TEXTCOLOR",   (0,0), (-1,0),  colors.white),
-        ("FONTSIZE",    (0,0), (-1,-1), 9),
+        ("FONTNAME",       (0,0), (-1,0),  "Helvetica-Bold"),
+        ("BACKGROUND",     (0,0), (-1,0),  colors.HexColor("#2d3748")),
+        ("TEXTCOLOR",      (0,0), (-1,0),  colors.white),
+        ("FONTSIZE",       (0,0), (-1,-1), 9),
         ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.whitesmoke, colors.white]),
-        ("GRID",        (0,0), (-1,-1), 0.5, colors.lightgrey),
-        ("TOPPADDING",  (0,0), (-1,-1), 4),
-        ("BOTTOMPADDING",(0,0),(-1,-1), 4),
+        ("GRID",           (0,0), (-1,-1), 0.5, colors.lightgrey),
+        ("TOPPADDING",     (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING",  (0,0), (-1,-1), 4),
     ]))
     story.append(pt)
-    story.append(Spacer(1, 0.3*cm))
 
-    # ── Image vs Metadata contrib
+    # ── SHAP metadata ─────────────────────────────────────────────────────────
+    story.append(Paragraph("Metadata Influence (SHAP)", h2_style))
+
+    if shap_vals is None:
+        story.append(Paragraph("SHAP not computed — enable 'Compute SHAP' and re-analyse.", note_style))
+    elif shap_all_zero:
+        story.append(Paragraph(
+            "Image-driven prediction. Clinical metadata did not modify the result — "
+            "the lesion presents sufficiently distinctive visual characteristics.", note_style))
+    else:
+        # SHAP table: all 16 features sorted by abs value, highlight age and location
+        shap_data  = [["Feature", "SHAP value", "Patient value"]]
+        order      = np.argsort(np.abs(shap_vals))[::-1]
+        for i in order:
+            name     = METADATA_FEATURE_NAMES[i]
+            val      = shap_vals[i]
+            is_age   = (name == "age")
+            is_loc   = (name == f"loc: {location}")
+            pat_val  = f"{age:.0f} yrs" if is_age else ("1" if is_loc else "0")
+            shap_data.append([name, f"{val:+.5f}", pat_val])
+
+        st_tbl = Table(shap_data, colWidths=[INNER*0.5, INNER*0.25, INNER*0.25])
+        style_cmds = [
+            ("FONTNAME",       (0,0), (-1,0),  "Helvetica-Bold"),
+            ("BACKGROUND",     (0,0), (-1,0),  colors.HexColor("#2d3748")),
+            ("TEXTCOLOR",      (0,0), (-1,0),  colors.white),
+            ("FONTSIZE",       (0,0), (-1,-1), 8),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.whitesmoke, colors.white]),
+            ("GRID",           (0,0), (-1,-1), 0.5, colors.lightgrey),
+            ("TOPPADDING",     (0,0), (-1,-1), 3),
+            ("BOTTOMPADDING",  (0,0), (-1,-1), 3),
+        ]
+        # Highlight active features (age + location) in yellow
+        for row_i, i in enumerate(order, start=1):
+            name = METADATA_FEATURE_NAMES[i]
+            if name == "age" or name == f"loc: {location}":
+                style_cmds.append(("BACKGROUND", (0, row_i), (-1, row_i),
+                                   colors.HexColor("#fefcbf")))
+                style_cmds.append(("FONTNAME", (0, row_i), (-1, row_i),
+                                   "Helvetica-Bold"))
+        st_tbl.setStyle(TableStyle(style_cmds))
+        story.append(st_tbl)
+
+    # ── Image vs Metadata contrib ─────────────────────────────────────────────
     if contrib_img is not None:
-        story.append(Paragraph("Image vs Metadata Influence", styles["Heading2"]))
+        story.append(Paragraph("Image vs Metadata Contribution", h2_style))
         ratio = contrib_img / (contrib_meta + 1e-8)
+
+        if ratio > 50:
+            note = "Image-driven prediction. Clinical metadata had negligible influence."
+        elif ratio > 10:
+            note = f"Clinical metadata contributed to this prediction (ratio {ratio:.0f}x)."
+        else:
+            note = "Ambiguous image with strong clinical metadata influence. Specialist review recommended."
+
         contrib_data = [
             ["Image contribution",    f"{contrib_img:.4f}"],
             ["Metadata contribution", f"{contrib_meta:.4f}"],
-            ["Image/Metadata ratio",  f"{ratio:.0f}×"],
+            ["Image/Metadata ratio",  f"{ratio:.0f}x"],
+            ["Interpretation",        note],
         ]
-        ct = Table(contrib_data, colWidths=[8*cm, 8*cm])
+        ct = Table(contrib_data, colWidths=[INNER*0.4, INNER*0.6])
         ct.setStyle(TableStyle([
-            ("FONTNAME",    (0,0), (0,-1),  "Helvetica-Bold"),
-            ("FONTSIZE",    (0,0), (-1,-1), 9),
+            ("FONTNAME",       (0,0), (0,-1),  "Helvetica-Bold"),
+            ("FONTSIZE",       (0,0), (-1,-1), 9),
             ("ROWBACKGROUNDS", (0,0), (-1,-1), [colors.whitesmoke, colors.white]),
-            ("GRID",        (0,0), (-1,-1), 0.5, colors.lightgrey),
-            ("TOPPADDING",  (0,0), (-1,-1), 4),
-            ("BOTTOMPADDING",(0,0),(-1,-1), 4),
+            ("GRID",           (0,0), (-1,-1), 0.5, colors.lightgrey),
+            ("TOPPADDING",     (0,0), (-1,-1), 4),
+            ("BOTTOMPADDING",  (0,0), (-1,-1), 4),
         ]))
         story.append(ct)
-        story.append(Spacer(1, 0.3*cm))
 
-    # ── Disclaimer
-    disc_style = ParagraphStyle("disc", fontSize=7, textColor=colors.grey,
-                                 borderPad=4)
-    story.append(Spacer(1, 0.5*cm))
+    # ── Disclaimer ────────────────────────────────────────────────────────────
     story.append(Paragraph(
         "This report is intended for research and educational purposes only. "
         "It does not constitute a medical diagnosis. "
@@ -634,6 +711,7 @@ if analyze_btn or "last_result" in st.session_state:
             "overlay": overlay, "saliency": saliency, "shap_vals": shap_vals,
             # PROB
             "contrib_img": contrib_img, "contrib_meta": contrib_meta,
+            "shap_all_zero": shap_all_zero,
         }
 
     # Retrieve cached result
@@ -647,7 +725,7 @@ if analyze_btn or "last_result" in st.session_state:
     shap_vals  = res["shap_vals"]
     contrib_img  = res.get("contrib_img", None)
     contrib_meta = res.get("contrib_meta", None)
-
+    shap_all_zero = res.get("shap_all_zero", True)
     # ── LAYOUT ────────────────────────────────────────────────────────────────
     col1, col2 = st.columns([1, 1], gap="large")
 
@@ -769,12 +847,13 @@ if analyze_btn or "last_result" in st.session_state:
                     f"- **Anatomical location:** {location}")
 
         # PDF download button
+        # PDF download button
         if "last_result" in st.session_state:
             pdf_bytes = generate_report_pdf(
                 pil_img, pil_cc, overlay, saliency,
                 probs, pred_name, confidence,
                 age, location, shap_vals,
-                contrib_img, contrib_meta
+                contrib_img, contrib_meta, shap_all_zero
             )
             st.download_button(
                 label="📄 Download PDF Report",
