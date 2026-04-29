@@ -304,7 +304,10 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
 
     doc = SimpleDocTemplate(buffer, pagesize=A4,
                             rightMargin=MARGIN, leftMargin=MARGIN,
-                            topMargin=MARGIN, bottomMargin=MARGIN)
+                            topMargin=MARGIN, bottomMargin=MARGIN,
+                            title="Skin Lesion Classification Report",
+                            author="Maialen Blanco Ibarra — Universidad de Deusto",
+                            subject="Multimodal skin lesion analysis · HAM10000")
     styles = getSampleStyleSheet()
     story  = []
 
@@ -344,7 +347,7 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
         ["Analysis date",        datetime.now().strftime("%Y-%m-%d %H:%M")],
     ]
     col_w = [5*cm, INNER - 5*cm]
-    t = Table(result_data, colWidths=col_w)
+    t = Table(result_data, colWidths=col_w, hAlign="LEFT")
     t.setStyle(TableStyle([
         ("FONTNAME",       (0,0), (-1,-1), "Helvetica"),
         ("FONTNAME",       (0,0), (0,-1),  "Helvetica-Bold"),
@@ -376,7 +379,7 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
     story.append(Paragraph("Visual Explanations", h2_style))
 
     # Row 1: original at real aspect ratio, max 7cm tall, centered
-    MAX_IMG_H = 7 * cm
+    MAX_IMG_H = 5 * cm
     aspect    = pil_img.width / pil_img.height
     orig_h    = MAX_IMG_H
     orig_w    = min(orig_h * aspect, INNER)
@@ -384,11 +387,11 @@ def generate_report_pdf(pil_img, pil_cc, overlay, saliency,
         orig_h = INNER / aspect
     buf0 = io.BytesIO(); pil_img.save(buf0, format="PNG"); buf0.seek(0)
     orig_img_rl = RLImage(buf0, width=orig_w, height=orig_h)
-    orig_tbl    = Table([[orig_img_rl]], colWidths=[INNER])
+    cap_orig    = Paragraph("Original", ParagraphStyle("cap", fontSize=7,
+                             textColor=colors.grey, alignment=1, spaceAfter=4))
+    orig_tbl    = Table([[orig_img_rl], [cap_orig]], colWidths=[orig_w])
     orig_tbl.setStyle(TableStyle([("ALIGN", (0,0), (-1,-1), "LEFT")]))
     story.append(orig_tbl)
-    story.append(Paragraph("Original", ParagraphStyle("cap", fontSize=7,
-                             textColor=colors.grey, alignment=1, spaceAfter=4)))
 
     # Row 2: color constancy + gradcam + smoothgrad
     cell_w    = INNER / 3
