@@ -785,10 +785,10 @@ if analyze_btn or "last_result" in st.session_state:
                 st.image(saliency, caption="SmoothGrad", use_container_width=True)
         with st.expander("What do these visualizations mean?"):
             st.markdown("""
-**Grad-CAM** — The heatmap shows which regions of the image most influenced 
+**Grad-CAM** - The heatmap shows which regions of the image most influenced 
 the model's decision. Red areas were the most important, blue areas were ignored.
 
-**SmoothGrad** — Similar to Grad-CAM but at pixel level. Highlights the exact 
+**SmoothGrad** - Similar to Grad-CAM but at pixel level. Highlights the exact 
 features (texture, edges) the model focused on, averaged over multiple noisy 
 versions of the image to reduce noise artefacts.
             """)
@@ -811,13 +811,6 @@ versions of the image to reduce noise artefacts.
             st.pyplot(fig2)
             plt.close(fig2)
 
-            with st.expander("What is SHAP?"):
-                st.markdown("""
-**SHAP** (SHapley Additive exPlanations) shows how much each clinical variable 
-(age and anatomical location) pushed the prediction towards or away from the 
-predicted class. **Red bars** increase the probability, **blue bars** decrease it.
-                """)
-
             if ratio > 50:
                 st.info(
                     "**Image-driven prediction.** "
@@ -839,6 +832,13 @@ predicted class. **Red bars** increase the probability, **blue bars** decrease i
                     "The model is relying heavily on age and location to reach a decision. "
                     "This case requires review by a dermatology specialist."
                 )
+
+        with st.expander("What is SHAP?"):
+                st.markdown("""
+**SHAP** (SHapley Additive exPlanations) shows how much each clinical variable 
+(age and anatomical location) pushed the prediction towards or away from the 
+predicted class. **Red bars** increase the probability, **blue bars** decrease it.
+                """)
 
     # RIGHT — results
     with col2:
