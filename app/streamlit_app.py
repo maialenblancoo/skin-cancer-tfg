@@ -234,6 +234,7 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
             ticklabel.set_text("● " + ticklabel.get_text())
             ticklabel.set_fontweight("bold")
         ticklabel.set_fontsize(9)
+    
     ax.axvline(0, color="#4a5568", linewidth=0.8)
     ax.set_xlabel("SHAP value", fontsize=10)
     ax.set_title("Metadata contribution (SHAP)", fontsize=11, fontweight="bold")
