@@ -204,7 +204,7 @@ def render_shap_plot(shap_vals: np.ndarray, age: float) -> plt.Figure:
     values   = values[::-1]
     colors   = ["#e53e3e" if v > 0 else "#3182ce" for v in values]
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(6, 4))
     bars = ax.barh(features, values, color=colors, height=0.6)
     ax.axvline(0, color="#4a5568", linewidth=0.8)
     ax.set_xlabel("SHAP value", fontsize=10)
