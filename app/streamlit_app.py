@@ -350,33 +350,6 @@ st.markdown(
 )
 st.divider()
 
-st.divider()
-
-with st.expander("ℹ️ About the model"):
-    st.markdown("""
-    **Model:** E09 — EfficientNet-B0 + Color Constancy + age + anatomical location (seed 42)
-    
-    **Dataset:** HAM10000 — 10,015 dermoscopic images, 7 classes
-    
-    | Metric | Value |
-    |--------|-------|
-    | Melanoma Recall | 0.9102 |
-    | Melanoma ROC-AUC | 0.9727 |
-    | Melanoma F1 | 0.7883 |
-    | Balanced Accuracy | 0.7519 |
-    
-    **Inference:** TTA ×6 geometric transforms + melanoma threshold 0.31 (val-selected)
-    
-    **Explainability:** Grad-CAM (image branch) + SHAP KernelExplainer (metadata branch)
-    
-    **Known limitations:**
-    - Underrepresented locations (ear, face, neck) may be underweighted
-    - Metadata contributes ~140-199× less than image on average
-    - Not validated on clinical data outside HAM10000
-    
-    **Author:** Maialen Blanco Ibarra — Deusto University, 2026
-    """)
-
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR — INPUT
 # ─────────────────────────────────────────────────────────────────────────────
